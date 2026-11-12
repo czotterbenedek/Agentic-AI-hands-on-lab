@@ -1,0 +1,81 @@
+config,test_id,category,success,precision,recall,f1,steps,latency_s
+1. Basic LLM (No tools),TC-01,calculation,0,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-02,calculation,1,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-03,paper_search,0,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-04,paper_search,0,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-05,paper_search,0,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-06,paper_search,0,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-07,paper_search,0,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-08,paper_search,0,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-09,paper_details,0,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-10,paper_details,0,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-11,calculation,0,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-12,memory,0,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-13,memory,0,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-14,multi_agent,1,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-15,multi_agent,1,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-16,calculation,0,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-17,paper_search,0,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-18,memory,0,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-19,multi_agent,1,0.0,0.0,0.0,1,0.0
+1. Basic LLM (No tools),TC-20,direct_qa,1,1.0,1.0,1.0,1,0.0
+2. Single ReAct Agent,TC-01,calculation,1,1.0,1.0,1.0,5,0.0
+2. Single ReAct Agent,TC-02,calculation,1,0.0,0.0,0.0,2,0.0
+2. Single ReAct Agent,TC-03,paper_search,1,1.0,1.0,1.0,5,0.0
+2. Single ReAct Agent,TC-04,paper_search,1,1.0,1.0,1.0,5,0.0
+2. Single ReAct Agent,TC-05,paper_search,1,1.0,1.0,1.0,5,0.0
+2. Single ReAct Agent,TC-06,paper_search,0,1.0,1.0,1.0,5,0.0
+2. Single ReAct Agent,TC-07,paper_search,1,1.0,1.0,1.0,5,0.0
+2. Single ReAct Agent,TC-08,paper_search,0,1.0,1.0,1.0,5,0.0
+2. Single ReAct Agent,TC-09,paper_details,1,0.0,0.0,0.0,5,0.0
+2. Single ReAct Agent,TC-10,paper_details,1,0.0,0.0,0.0,5,0.0
+2. Single ReAct Agent,TC-11,calculation,0,0.0,0.0,0.0,5,0.0
+2. Single ReAct Agent,TC-12,memory,0,0.0,0.0,0.0,5,0.0
+2. Single ReAct Agent,TC-13,memory,0,0.0,0.0,0.0,5,0.0
+2. Single ReAct Agent,TC-14,multi_agent,1,0.0,0.0,0.0,2,0.0
+2. Single ReAct Agent,TC-15,multi_agent,1,0.0,0.0,0.0,2,0.0
+2. Single ReAct Agent,TC-16,calculation,1,1.0,1.0,1.0,5,0.0
+2. Single ReAct Agent,TC-17,paper_search,0,1.0,1.0,1.0,5,0.0
+2. Single ReAct Agent,TC-18,memory,0,0.0,0.0,0.0,5,0.0
+2. Single ReAct Agent,TC-19,multi_agent,1,0.0,0.0,0.0,2,0.0
+2. Single ReAct Agent,TC-20,direct_qa,0,0.0,1.0,0.0,5,0.0
+3. Agent with Memory,TC-01,calculation,1,0.0,0.0,0.0,1,0.001
+3. Agent with Memory,TC-02,calculation,1,0.0,0.0,0.0,1,0.001
+3. Agent with Memory,TC-03,paper_search,1,0.0,0.0,0.0,1,0.001
+3. Agent with Memory,TC-04,paper_search,1,0.0,0.0,0.0,1,0.001
+3. Agent with Memory,TC-05,paper_search,1,0.0,0.0,0.0,1,0.001
+3. Agent with Memory,TC-06,paper_search,0,0.0,0.0,0.0,1,0.002
+3. Agent with Memory,TC-07,paper_search,1,0.0,0.0,0.0,1,0.001
+3. Agent with Memory,TC-08,paper_search,0,0.0,0.0,0.0,1,0.001
+3. Agent with Memory,TC-09,paper_details,1,0.0,0.0,0.0,1,0.001
+3. Agent with Memory,TC-10,paper_details,1,0.0,0.0,0.0,1,0.001
+3. Agent with Memory,TC-11,calculation,0,0.0,0.0,0.0,1,0.001
+3. Agent with Memory,TC-12,memory,0,0.0,0.0,0.0,1,0.001
+3. Agent with Memory,TC-13,memory,0,0.0,0.0,0.0,1,0.001
+3. Agent with Memory,TC-14,multi_agent,1,0.0,0.0,0.0,1,0.001
+3. Agent with Memory,TC-15,multi_agent,1,0.0,0.0,0.0,1,0.001
+3. Agent with Memory,TC-16,calculation,1,0.0,0.0,0.0,1,0.001
+3. Agent with Memory,TC-17,paper_search,0,0.0,0.0,0.0,1,0.001
+3. Agent with Memory,TC-18,memory,0,0.0,0.0,0.0,1,0.001
+3. Agent with Memory,TC-19,multi_agent,1,0.0,0.0,0.0,1,0.001
+3. Agent with Memory,TC-20,direct_qa,0,1.0,1.0,1.0,1,0.001
+4. Multi-Agent System,TC-01,calculation,0,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-02,calculation,1,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-03,paper_search,1,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-04,paper_search,1,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-05,paper_search,1,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-06,paper_search,1,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-07,paper_search,1,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-08,paper_search,1,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-09,paper_details,1,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-10,paper_details,1,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-11,calculation,0,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-12,memory,0,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-13,memory,0,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-14,multi_agent,1,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-15,multi_agent,1,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-16,calculation,0,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-17,paper_search,0,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-18,memory,0,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-19,multi_agent,1,0.0,0.0,0.0,4,0.0
+4. Multi-Agent System,TC-20,direct_qa,1,1.0,1.0,1.0,4,0.0

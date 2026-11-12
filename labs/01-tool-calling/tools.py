@@ -1,0 +1,261 @@
+"""Tool definitions, schema generation, and registry for Module 1 (Starter Lab)."""
+
+import inspect
+import json
+import math
+import re
+from typing import Any, Callable, Dict, List, Optional, get_type_hints
+
+from shared.agent import Tool
+
+
+# Curated academic research dataset used consistently across the labs
+RESEARCH_PAPERS_DB: List[Dict[str, Any]] = [
+    {
+        "paper_id": "1706.03762",
+        "title": "Attention Is All You Need",
+        "authors": ["Ashish Vaswani", "Noam Shazeer", "Niki Parmar", "Jakob Uszkoreit"],
+        "year": 2017,
+        "citations": 125000,
+        "abstract": "We propose the Transformer, a model architecture eschewing recurrence and relying entirely on an attention mechanism to draw global dependencies between input and output.",
+        "topics": ["transformer", "nlp", "deep learning", "attention"],
+    },
+    {
+        "paper_id": "1810.04805",
+        "title": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
+        "authors": ["Jacob Devlin", "Ming-Wei Chang", "Kenton Lee", "Kristina Toutanova"],
+        "year": 2018,
+        "citations": 85000,
+        "abstract": "We introduce BERT, which stands for Bidirectional Encoder Representations from Transformers, designed to pretrain deep bidirectional representations from unlabeled text.",
+        "topics": ["nlp", "bert", "transformer", "pretraining"],
+    },
+    {
+        "paper_id": "2106.09685",
+        "title": "LoRA: Low-Rank Adaptation of Large Language Models",
+        "authors": ["Edward J. Hu", "Yelong Shen", "Phillip Wallis", "Zeyuan Allen-Zhu"],
+        "year": 2021,
+        "citations": 18500,
+        "abstract": "We propose Low-Rank Adaptation (LoRA), which freezes the pre-trained model weights and injects trainable rank decomposition matrices into each layer of the Transformer architecture.",
+        "topics": ["lora", "fine-tuning", "parameter-efficient", "llm"],
+    },
+    {
+        "paper_id": "2201.11903",
+        "title": "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models",
+        "authors": ["Jason Wei", "Xuezhi Wang", "Dale Schuurmans", "Maarten Bosma"],
+        "year": 2022,
+        "citations": 12000,
+        "abstract": "We explore how generating a chain of thought—a series of intermediate reasoning steps—significantly improves the ability of large language models to perform complex reasoning.",
+        "topics": ["prompting", "reasoning", "chain-of-thought", "llm"],
+    },
+    {
+        "paper_id": "2210.03629",
+        "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+        "authors": ["Shunyu Yao", "Jeffrey Zhao", "Dian Yu", "Nan Du", "Izhak Shafran", "Karthik Narasimhan"],
+        "year": 2022,
+        "citations": 7500,
+        "abstract": "We explore the use of LLMs to generate both reasoning traces and task-specific actions in an interleaved manner, enabling greater synergy between the two.",
+        "topics": ["react", "agent", "reasoning", "tool calling"],
+    },
+    {
+        "paper_id": "2302.04761",
+        "title": "Toolformer: Language Models Can Teach Themselves to Use Tools",
+        "authors": ["Timo Schick", "Jane Dwivedi-Yu", "Roberto Dessi", "Roberta Raileanu"],
+        "year": 2023,
+        "citations": 6200,
+        "abstract": "Language models can teach themselves to use external tools via simple APIs, deciding which tool to call, when to call it, what arguments to pass, and how to incorporate results.",
+        "topics": ["tool calling", "agent", "toolformer", "llm"],
+    },
+]
+
+
+def generate_json_schema(func: Callable[..., Any]) -> Dict[str, Any]:
+    """Generate a JSON schema for a Python function's parameters from type hints and docstrings.
+
+    # ==============================================================================
+    # TODO [Lab 1.1]: Automatic JSON Schema Generation (~40 lines)
+    # ------------------------------------------------------------------------------
+    # In function-calling models, tools must be declared using standard JSON Schema.
+    # Inspect the given function `func` to dynamically generate a valid JSON Schema:
+    #
+    # 1. Inspect function parameters using `inspect.signature(func)` and `get_type_hints(func)`.
+    # 2. Map Python types to JSON Schema types:
+    #    str -> "string", int -> "integer", float -> "number", bool -> "boolean",
+    #    list -> "array", dict -> "object".
+    # 3. Parse docstrings to extract parameter descriptions (e.g. from `:param <name>: <desc>`
+    #    or markdown-style bullet points).
+    # 4. Identify required parameters (parameters without default values, ignoring self/cls).
+    # 5. Return a dictionary in the standard format:
+    #    {
+    #        "type": "object",
+    #        "properties": { <param_name>: {"type": ..., "description": ...}, ... },
+    #        "required": [ ... ]
+    #    }
+    # ==============================================================================
+    """
+    raise NotImplementedError("TODO [Lab 1.1]: Implement generate_json_schema")
+
+
+class ToolRegistry:
+    """Registry to manage and look up agent tools."""
+
+    def __init__(self) -> None:
+        self._tools: Dict[str, Tool] = {}
+
+    def register(
+        self,
+        func: Optional[Callable[..., Any]] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> Any:
+        """Register a function as a tool. Can be used as a decorator or method."""
+        def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
+            tool_name = name or f.__name__
+            tool_desc = description or (inspect.getdoc(f) or f"Execute {tool_name}").splitlines()[0]
+            schema = generate_json_schema(f)
+            self._tools[tool_name] = Tool(
+                name=tool_name,
+                description=tool_desc,
+                parameters=schema,
+                func=f,
+            )
+            return f
+
+        if func is not None:
+            return decorator(func)
+        return decorator
+
+    def get_tool(self, name: str) -> Optional[Tool]:
+        """Retrieve a tool by name."""
+        return self._tools.get(name)
+
+    def list_tools(self) -> List[Tool]:
+        """Return all registered tools."""
+        return list(self._tools.values())
+
+    def get_schemas(self) -> List[Dict[str, Any]]:
+        """Return OpenAI-compatible function calling schemas for all registered tools."""
+        return [tool.to_openai_schema() for tool in self._tools.values()]
+
+
+# ------------------------------------------------------------------------------
+# Core Research Assistant Tools
+# ------------------------------------------------------------------------------
+
+def calculate(expression: str) -> str:
+    """Safely evaluate a mathematical arithmetic expression.
+
+    :param expression: Mathematical expression string, e.g. '125000 / 7' or '18500 + 12000'
+
+    # ==============================================================================
+    # TODO [Lab 1.2]: Safe Calculation Tool (~30 lines)
+    # ------------------------------------------------------------------------------
+    # Security is critical when executing LLM-generated code or math:
+    # 1. Clean and strip the input expression.
+    # 2. Prevent arbitrary code execution: disallow access to python builtins
+    #    (`__import__`, `eval`, `exec`, `open`, etc.) or non-math identifiers.
+    #    Allow basic math functions if desired (e.g. sqrt, log, pow, abs).
+    # 3. Evaluate the arithmetic safely using `eval()` with `__builtins__: {}` and a
+    #    restricted set of mathematical functions.
+    # 4. Return the result as a string, rounded to 4 decimal places if float.
+    # 5. Catch and return any evaluation errors as clear error strings instead of crashing.
+    # ==============================================================================
+    """
+    raise NotImplementedError("TODO [Lab 1.2]: Implement safe calculate tool")
+
+
+def search_papers(query: str, limit: int = 5) -> List[Dict[str, Any]]:
+    """Search academic research papers in the bibliographic database.
+
+    :param query: Keywords or topics to search for, e.g. 'transformer', 'lora', 'agent'
+    :param limit: Maximum number of matching papers to return
+    """
+    query_tokens = [q.lower() for q in re.split(r"\W+", query) if len(q) > 1]
+    if not query_tokens:
+        query_tokens = [query.lower()]
+
+    matches: List[Dict[str, Any]] = []
+    for paper in RESEARCH_PAPERS_DB:
+        title_lower = paper["title"].lower()
+        abstract_lower = paper["abstract"].lower()
+        topics = [t.lower() for t in paper.get("topics", [])]
+
+        score = 0
+        for token in query_tokens:
+            if token in title_lower:
+                score += 3
+            if any(token in t for t in topics):
+                score += 2
+            if token in abstract_lower:
+                score += 1
+
+        if score > 0:
+            matches.append({**paper, "relevance_score": score})
+
+    # Sort descending by relevance score, then by citation count
+    matches.sort(key=lambda p: (p["relevance_score"], p["citations"]), reverse=True)
+    return matches[:limit]
+
+
+def get_paper_details(paper_id: str) -> Dict[str, Any]:
+    """Retrieve full bibliographic details for a specific research paper by ID.
+
+    :param paper_id: The identifier of the paper, e.g. '1706.03762'
+    """
+    for paper in RESEARCH_PAPERS_DB:
+        if paper["paper_id"] == str(paper_id).strip():
+            return paper
+    return {"error": f"Paper with ID '{paper_id}' not found."}
+
+
+def compute_citation_stats(paper_ids: List[str]) -> Dict[str, Any]:
+    """Compute aggregated citation statistics across a list of research papers.
+
+    :param paper_ids: List of paper IDs to aggregate
+
+    # ==============================================================================
+    # TODO [Lab 1.3]: Multi-Paper Citation Aggregation Tool (~35 lines)
+    # ------------------------------------------------------------------------------
+    # Student Exercise: Implement a tool that computes aggregate metrics:
+    # 1. Iterate over the provided `paper_ids` and fetch details for each paper using
+    #    `get_paper_details(pid)`.
+    # 2. Extract `citations` and `title` for each successfully found paper.
+    # 3. If no valid papers were found, return {"error": "No valid papers found with given IDs."}.
+    # 4. Compute:
+    #    - paper_count: total number of papers
+    #    - total_citations: sum of citations
+    #    - average_citations: mean rounded to 2 decimal places
+    #    - max_citations: maximum citation count
+    #    - min_citations: minimum citation count
+    #    - papers: list of paper titles
+    # 5. Return the resulting dictionary.
+    # ==============================================================================
+    """
+    raise NotImplementedError("TODO [Lab 1.3]: Implement compute_citation_stats tool")
+
+
+def summarize_paper(paper_id: str) -> str:
+    """Generate a structured summary of a research paper's methodology and impact.
+
+    :param paper_id: Paper ID to summarize
+    """
+    paper = get_paper_details(paper_id)
+    if "error" in paper:
+        return paper["error"]
+
+    return (
+        f"Summary of '{paper['title']}' ({paper['year']}):\n"
+        f"Authors: {', '.join(paper['authors'])}\n"
+        f"Citations: {paper['citations']:,}\n"
+        f"Key Contribution: {paper['abstract']}"
+    )
+
+
+def get_default_tool_registry() -> ToolRegistry:
+    """Create and populate a standard tool registry for the University Research Assistant."""
+    registry = ToolRegistry()
+    registry.register(calculate)
+    registry.register(search_papers)
+    registry.register(get_paper_details)
+    registry.register(compute_citation_stats)
+    registry.register(summarize_paper)
+    return registry

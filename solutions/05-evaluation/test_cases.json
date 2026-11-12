@@ -1,0 +1,168 @@
+[
+  {
+    "id": "TC-01",
+    "category": "calculation",
+    "prompt": "Calculate 125000 / 5 + 450 * 2",
+    "expected_tools": ["calculate"],
+    "required_keywords": ["25900"],
+    "forbidden_keywords": ["error", "invalid"]
+  },
+  {
+    "id": "TC-02",
+    "category": "calculation",
+    "prompt": "What is the square root of 65536 divided by 16?",
+    "expected_tools": ["calculate"],
+    "required_keywords": ["16"],
+    "forbidden_keywords": ["error"]
+  },
+  {
+    "id": "TC-03",
+    "category": "paper_search",
+    "prompt": "Find research papers about Attention Is All You Need and transformer architecture",
+    "expected_tools": ["search_papers"],
+    "required_keywords": ["Attention", "Vaswani"],
+    "forbidden_keywords": ["error"]
+  },
+  {
+    "id": "TC-04",
+    "category": "paper_search",
+    "prompt": "Search papers on parameter-efficient fine-tuning and LoRA",
+    "expected_tools": ["search_papers"],
+    "required_keywords": ["LoRA", "Hu"],
+    "forbidden_keywords": ["error"]
+  },
+  {
+    "id": "TC-05",
+    "category": "paper_search",
+    "prompt": "Find academic papers on BERT bidirectional transformers",
+    "expected_tools": ["search_papers"],
+    "required_keywords": ["BERT", "Devlin"],
+    "forbidden_keywords": ["error"]
+  },
+  {
+    "id": "TC-06",
+    "category": "paper_search",
+    "prompt": "Search for literature on chain-of-thought prompting in language models",
+    "expected_tools": ["search_papers"],
+    "required_keywords": ["Chain-of-Thought", "Wei"],
+    "forbidden_keywords": ["error"]
+  },
+  {
+    "id": "TC-07",
+    "category": "paper_search",
+    "prompt": "Find papers on ReAct agent reasoning and acting",
+    "expected_tools": ["search_papers"],
+    "required_keywords": ["ReAct", "Yao"],
+    "forbidden_keywords": ["error"]
+  },
+  {
+    "id": "TC-08",
+    "category": "paper_search",
+    "prompt": "Search papers on Toolformer teaching models to use tools",
+    "expected_tools": ["search_papers"],
+    "required_keywords": ["Toolformer", "Schick"],
+    "forbidden_keywords": ["error"]
+  },
+  {
+    "id": "TC-09",
+    "category": "paper_details",
+    "prompt": "Get details for paper 1706.03762",
+    "expected_tools": ["get_paper_details"],
+    "required_keywords": ["Attention", "2017"],
+    "forbidden_keywords": ["error"]
+  },
+  {
+    "id": "TC-10",
+    "category": "paper_details",
+    "prompt": "Retrieve full information for paper 2106.09685",
+    "expected_tools": ["get_paper_details"],
+    "required_keywords": ["LoRA", "2021"],
+    "forbidden_keywords": ["error"]
+  },
+  {
+    "id": "TC-11",
+    "category": "calculation",
+    "prompt": "Calculate the average citation count if paper A has 125000 and paper B has 85000: (125000 + 85000) / 2",
+    "expected_tools": ["calculate"],
+    "required_keywords": ["105000"],
+    "forbidden_keywords": ["error"]
+  },
+  {
+    "id": "TC-12",
+    "category": "memory",
+    "prompt": "Please remember that my primary research topic is reinforcement learning and robotics",
+    "user_id": "eval_student_1",
+    "session_id": "sess_01",
+    "expected_tools": ["save_preference"],
+    "required_keywords": ["preference", "saved"],
+    "forbidden_keywords": ["error"]
+  },
+  {
+    "id": "TC-13",
+    "category": "memory",
+    "prompt": "What research preferences do you remember for me?",
+    "user_id": "eval_student_1",
+    "session_id": "sess_02",
+    "expected_tools": ["get_preferences"],
+    "required_keywords": ["reinforcement", "robotics"],
+    "forbidden_keywords": ["error"]
+  },
+  {
+    "id": "TC-14",
+    "category": "multi_agent",
+    "prompt": "Compare LoRA and BERT for natural language processing",
+    "expected_tools": ["search_papers", "calculate"],
+    "required_keywords": ["LoRA", "BERT"],
+    "forbidden_keywords": ["error"]
+  },
+  {
+    "id": "TC-15",
+    "category": "multi_agent",
+    "prompt": "Analyze transformer and attention mechanisms citing key metrics",
+    "expected_tools": ["search_papers"],
+    "required_keywords": ["Attention", "Transformer"],
+    "forbidden_keywords": ["error"]
+  },
+  {
+    "id": "TC-16",
+    "category": "calculation",
+    "prompt": "Compute 18500 * 3 - 5000",
+    "expected_tools": ["calculate"],
+    "required_keywords": ["50500"],
+    "forbidden_keywords": ["error"]
+  },
+  {
+    "id": "TC-17",
+    "category": "paper_search",
+    "prompt": "Search research papers for diffusion models and generative AI",
+    "expected_tools": ["search_papers"],
+    "required_keywords": ["papers", "results"],
+    "forbidden_keywords": ["error"]
+  },
+  {
+    "id": "TC-18",
+    "category": "memory",
+    "prompt": "Save a research note on topic 'thesis': Evaluate 8-bit vs 4-bit LoRA adaptation",
+    "user_id": "eval_student_2",
+    "session_id": "sess_03",
+    "expected_tools": ["save_research_note"],
+    "required_keywords": ["note", "saved"],
+    "forbidden_keywords": ["error"]
+  },
+  {
+    "id": "TC-19",
+    "category": "multi_agent",
+    "prompt": "Conduct literature review on reasoning with Chain-of-Thought and ReAct agents",
+    "expected_tools": ["search_papers"],
+    "required_keywords": ["Chain-of-Thought", "ReAct"],
+    "forbidden_keywords": ["error"]
+  },
+  {
+    "id": "TC-20",
+    "category": "direct_qa",
+    "prompt": "State your role as the University Research Assistant",
+    "expected_tools": [],
+    "required_keywords": ["Research Assistant"],
+    "forbidden_keywords": ["error"]
+  }
+]
