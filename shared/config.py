@@ -40,6 +40,13 @@ class Settings:
     max_delegation_depth: int = int(os.getenv("MAX_DELEGATION_DEPTH", "4"))
     log_level: str = os.getenv("LOG_LEVEL", "INFO").upper()
 
+    # LangGraph Multi-Agent Configuration (Module 4)
+    langgraph_recursion_limit: int = int(os.getenv("LANGGRAPH_RECURSION_LIMIT", "10"))
+
+    # MLflow Tracking Configuration (Module 5)
+    mlflow_tracking_uri: str = os.getenv("MLFLOW_TRACKING_URI", "./mlruns")
+    mlflow_experiment_name: str = os.getenv("MLFLOW_EXPERIMENT_NAME", "academic_research_agent_evaluation")
+
 
 def get_settings() -> Settings:
     """Return the global settings instance."""

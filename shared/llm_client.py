@@ -10,6 +10,13 @@ from typing import Any, Dict, List, Optional
 from shared.agent import AgentResponse, Message, ToolCall
 from shared.config import Settings, get_settings
 
+try:
+    from openai import OpenAI
+    HAS_OPENAI_SDK = True
+except ImportError:
+    OpenAI = None
+    HAS_OPENAI_SDK = False
+
 
 class BaseLLMClient(ABC):
     """Abstract interface for LLM completion and tool calling."""
@@ -26,7 +33,7 @@ class BaseLLMClient(ABC):
 
 
 class OpenAILLMClient(BaseLLMClient):
-    """Client for OpenAI and OpenAI-compatible endpoints (such as Ollama or VLLM)."""
+    """Client using the official OpenAI Python SDK (compatible with OpenAI, Ollama, VLLM)."""
 
     def __init__(
         self,
@@ -42,13 +49,74 @@ class OpenAILLMClient(BaseLLMClient):
         ).rstrip("/")
         self.model = model or settings.llm_model
 
+        self.sdk_client = None
+        if HAS_OPENAI_SDK:
+            try:
+                self.sdk_client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+            except Exception:
+                self.sdk_client = None
+
     def complete(
         self,
         messages: List[Message],
         tools: Optional[List[Dict[str, Any]]] = None,
         temperature: float = 0.0,
     ) -> AgentResponse:
-        """Send completion request to the OpenAI-compatible REST endpoint."""
+        """Send completion request using the official OpenAI Python SDK or fallback REST."""
+        if self.sdk_client is not None:
+            return self._complete_with_sdk(messages, tools, temperature)
+        return self._complete_with_rest(messages, tools, temperature)
+
+    def _complete_with_sdk(
+        self,
+        messages: List[Message],
+        tools: Optional[List[Dict[str, Any]]] = None,
+        temperature: float = 0.0,
+    ) -> AgentResponse:
+        """Complete using the official openai.OpenAI SDK client."""
+        payload_messages = [m.to_dict() for m in messages]
+        kwargs: Dict[str, Any] = {
+            "model": self.model,
+            "messages": payload_messages,
+            "temperature": temperature,
+        }
+        if tools:
+            kwargs["tools"] = tools
+            kwargs["tool_choice"] = "auto"
+
+        try:
+            response = self.sdk_client.chat.completions.create(**kwargs)
+            choice = response.choices[0]
+            msg = choice.message
+
+            tool_calls: List[ToolCall] = []
+            if msg.tool_calls:
+                for tc in msg.tool_calls:
+                    fn_name = tc.function.name
+                    args_raw = tc.function.arguments
+                    try:
+                        args = json.loads(args_raw) if isinstance(args_raw, str) else args_raw
+                    except Exception:
+                        args = {"raw": args_raw}
+                    tool_calls.append(ToolCall(id=tc.id, name=fn_name, arguments=args))
+
+            return AgentResponse(
+                content=msg.content,
+                tool_calls=tool_calls,
+                finish_reason=choice.finish_reason,
+                raw=response.model_dump() if hasattr(response, "model_dump") else {},
+            )
+        except Exception as e:
+            # If SDK call fails, attempt fallback to direct REST
+            return self._complete_with_rest(messages, tools, temperature)
+
+    def _complete_with_rest(
+        self,
+        messages: List[Message],
+        tools: Optional[List[Dict[str, Any]]] = None,
+        temperature: float = 0.0,
+    ) -> AgentResponse:
+        """Fallback completion using standard library HTTP REST request."""
         url = f"{self.base_url}/chat/completions"
         headers = {
             "Content-Type": "application/json",
@@ -139,45 +207,44 @@ class MockLLMClient(BaseLLMClient):
                 # Find citations in observation
                 citations = re.findall(r'"citation_count":\s*(\d+)', obs_content)
                 if not citations:
-                    citations = re.findall(r'(\d+)\s+citations', obs_content)
+                    citations = re.findall(r'"citations":\s*(\d+)', obs_content)
                 if citations:
                     expr = " + ".join(citations[:3])
                     return AgentResponse(
-                        content="I have found the papers. Now I will calculate their total citations.",
+                        content=f"Now calculating total/average citations from retrieved papers: {expr}",
                         tool_calls=[
                             ToolCall(
                                 id=f"mock_call_{self.call_count}",
                                 name="calculate",
-                                arguments={"expression": expr},
+                                arguments={"expression": f"({expr}) / {len(citations[:3])}"},
                             )
                         ],
                     )
 
-            # Otherwise synthesize final answer from observation
+            # Final synthesis after tool execution
             return AgentResponse(
-                content=f"Based on the tool results: {obs_content}",
+                content=(
+                    f"Based on the tool results for {tool_name}:\n{obs_content[:300]}...\n"
+                    "I have synthesized the findings for your academic research inquiry."
+                ),
                 tool_calls=[],
                 finish_reason="stop",
             )
 
-        # 2. If last message is from user (or assistant without tools yet), determine if tools are needed
-        user_content = ""
-        for m in reversed(messages):
-            if m.role == "user" and m.content:
-                user_content = m.content
-                break
-
+        # 2. First turn / user query - determine tool call based on query keywords
+        user_content = last_message.content or ""
         query = user_content.lower()
 
-        # Paper search query (prioritize search if query mentions papers/search)
-        if ("paper" in query or "research" in query or "search" in query or "arxiv" in query) and "search_papers" in available_tools:
+        # Paper search query
+        if ("paper" in query or "attention" in query or "bert" in query or "lora" in query or "agent" in query or "transformer" in query or "prompting" in query) and "search_papers" in available_tools:
+            # Extract topic
             topic = "transformer"
-            for t in ["lora", "diffusion", "bert", "attention", "reinforcement", "agent", "rag"]:
-                if re.search(rf"\b{t}\b", query):
+            for t in ["attention", "bert", "lora", "react", "chain-of-thought", "prompting", "transformer"]:
+                if t in query:
                     topic = t
                     break
             return AgentResponse(
-                content=f"I should search the literature for papers on '{topic}'.",
+                content=f"I need to search the academic database for research papers on '{topic}'.",
                 tool_calls=[
                     ToolCall(
                         id=f"mock_call_{self.call_count}",

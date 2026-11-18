@@ -97,6 +97,16 @@ def test_cycle_detection():
     assert orchestrator.detect_cycle(history) is True
 
 
+def test_langgraph_workflow_execution():
+    """Verify end-to-end execution of compiled LangGraph StateGraph workflow."""
+    orchestrator = MultiAgentOrchestrator(verbose=False)
+    context = orchestrator.execute_workflow("Analyze Attention Is All You Need and Transformer")
+    assert context.final_synthesis is not None
+    assert "Literature Discovery" in context.final_synthesis
+    assert len(context.retrieved_papers) > 0
+    assert len(context.delegation_history) >= 2
+
+
 if __name__ == "__main__":
     tests = [
         test_specialist_research_execution,
@@ -104,6 +114,7 @@ if __name__ == "__main__":
         test_supervisor_coordination_and_synthesis,
         test_max_delegation_depth_limit,
         test_cycle_detection,
+        test_langgraph_workflow_execution,
     ]
     passed = 0
     for t in tests:

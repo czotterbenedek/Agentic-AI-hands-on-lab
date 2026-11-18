@@ -36,83 +36,99 @@ class ResearchMCPServer:
         }
 
     # --------------------------------------------------------------------------
-    # Core MCP Tool Implementations
+    # Core MCP Tool Implementations (provided)
     # --------------------------------------------------------------------------
 
     def search_papers(self, query: str, max_results: int = 5, limit: Optional[int] = None, **kwargs: Any) -> str:
-        """Search research papers using public bibliographic dataset with Crossref fallback.
+        """Search research papers using public bibliographic dataset with Crossref fallback."""
+        if not query or not query.strip():
+            return json.dumps({"error": "Query cannot be empty"})
 
-        # ==============================================================================
-        # TODO [Lab 2.2a]: Implement MCP search_papers tool (~20 lines)
-        # ------------------------------------------------------------------------------
-        # 1. Validate query is non-empty. If empty, return JSON {"error": "..."}.
-        # 2. Determine count: `limit if limit is not None else max_results`.
-        # 3. Call `search_crossref_api(query, limit=count)`. If non-null, return `json.dumps(..., indent=2)`.
-        # 4. Fallback: filter `RESEARCH_DATASET` matching title, topics, or abstract against query.
-        #    Sort matching papers descending by citations.
-        # 5. Return JSON serialized string of top results.
-        # ==============================================================================
-        """
-        raise NotImplementedError("TODO [Lab 2.2a]: Implement search_papers tool")
+        count = limit if limit is not None else max_results
+
+        # Try live Crossref first, fallback to local curated dataset
+        crossref_res = search_crossref_api(query, limit=count)
+        if crossref_res:
+            return json.dumps(crossref_res, indent=2)
+
+        # Fallback to local dataset
+        q_lower = query.lower()
+        matches = []
+        for paper in RESEARCH_DATASET:
+            score = 0
+            if q_lower in paper["title"].lower():
+                score += 3
+            if any(q_lower in t.lower() for t in paper.get("topics", [])):
+                score += 2
+            if q_lower in paper["abstract"].lower():
+                score += 1
+
+            if score > 0:
+                matches.append(paper)
+
+        matches.sort(key=lambda p: p["citations"], reverse=True)
+        return json.dumps(matches[:count], indent=2)
 
     def get_paper_details(self, paper_id: str) -> str:
-        """Retrieve complete bibliographic details for a paper by ID or DOI.
+        """Retrieve complete bibliographic details for a paper by ID or DOI."""
+        pid = str(paper_id).strip()
+        for paper in RESEARCH_DATASET:
+            if paper["paper_id"] == pid or paper.get("doi") == pid:
+                return json.dumps(paper, indent=2)
+        return json.dumps({"error": f"Paper '{paper_id}' not found in database"})
 
-        # ==============================================================================
-        # TODO [Lab 2.2b]: Implement MCP get_paper_details tool (~15 lines)
-        # ------------------------------------------------------------------------------
-        # 1. Search `RESEARCH_DATASET` for a paper matching `paper_id` or `doi`.
-        # 2. If found, return its JSON representation formatted with indent=2.
-        # 3. If not found, return JSON with {"error": "Paper '...' not found in database"}.
-        # ==============================================================================
-        """
-        raise NotImplementedError("TODO [Lab 2.2b]: Implement get_paper_details tool")
-
-    def get_recent_papers(self, topic: str, limit: int = 5) -> str:
-        """Retrieve the most recent papers for a given academic topic.
-
-        # ==============================================================================
-        # TODO [Lab 2.2c]: Implement MCP get_recent_papers tool (~15 lines)
-        # ------------------------------------------------------------------------------
-        # 1. Filter `RESEARCH_DATASET` for papers matching topic in title or topics list.
-        # 2. Sort results descending by publication year, then by citations.
-        # 3. Return JSON formatted string of the top `limit` papers.
-        # ==============================================================================
-        """
-        raise NotImplementedError("TODO [Lab 2.2c]: Implement get_recent_papers tool")
+    def export_bibtex(self, paper_id: str) -> str:
+        """Export BibTeX citation entry for a given paper ID."""
+        pid = str(paper_id).strip()
+        for paper in RESEARCH_DATASET:
+            if paper["paper_id"] == pid or paper.get("doi") == pid:
+                bib = paper.get("bibtex")
+                if bib:
+                    return bib
+                # Construct synthetic BibTeX
+                authors_str = " and ".join(paper["authors"])
+                first_author = paper["authors"][0].split()[-1].lower() if paper["authors"] else "author"
+                year = paper["year"]
+                return (
+                    f"@article{{{first_author}{year},\n"
+                    f"  title={{{paper['title']}}},\n"
+                    f"  author={{{authors_str}}},\n"
+                    f"  year={{{year}}}\n"
+                    f"}}"
+                )
+        return f"% Error: Paper '{paper_id}' not found."
 
     # --------------------------------------------------------------------------
     # Student Exercise MCP Tools
     # --------------------------------------------------------------------------
 
-    def export_bibtex(self, paper_id: str) -> str:
-        """Export BibTeX citation entry for a given paper ID.
+    def get_recent_papers(self, topic: str, limit: int = 5) -> str:
+        """Retrieve the most recent papers for a given academic topic.
 
         # ==============================================================================
-        # TODO [Lab 2.3a]: Student Exercise - Implement export_bibtex tool (~20 lines)
+        # TODO [Lab 2.2a]: Implement MCP get_recent_papers tool (~10 lines)
         # ------------------------------------------------------------------------------
-        # 1. Locate paper in `RESEARCH_DATASET` by `paper_id`.
-        # 2. If the paper has a 'bibtex' field, return it directly.
-        # 3. Otherwise generate synthetic BibTeX entry:
-        #    @article{<key>, title={...}, author={...}, year={...}}
-        # 4. If not found, return an error message "% Error: Paper not found."
+        # 1. Filter `RESEARCH_DATASET` for papers matching `topic` in title or topics list
+        #    (case-insensitive).
+        # 2. Sort results descending by publication year, then by citations.
+        # 3. Return JSON formatted string of the top `limit` papers.
         # ==============================================================================
         """
-        raise NotImplementedError("TODO [Lab 2.3a]: Implement export_bibtex tool")
+        raise NotImplementedError("TODO [Lab 2.2a]: Implement get_recent_papers tool")
 
     def get_author_papers(self, author_name: str) -> str:
         """Retrieve all papers authored or co-authored by a specific researcher.
 
         # ==============================================================================
-        # TODO [Lab 2.3b]: Student Exercise - Implement get_author_papers tool (~20 lines)
+        # TODO [Lab 2.2b]: Implement MCP get_author_papers tool (~15 lines)
         # ------------------------------------------------------------------------------
         # 1. Case-insensitively match `author_name` against authors in `RESEARCH_DATASET`.
-        # 2. Extract paper_id, title, year, citations.
-        # 3. Sort descending by publication year.
-        # 4. Return as JSON string.
+        # 2. For each matching paper, extract: paper_id, title, year, citations.
+        # 3. Sort results descending by publication year.
+        # 4. Return as JSON formatted string.
         # ==============================================================================
         """
-        raise NotImplementedError("TODO [Lab 2.3b]: Implement get_author_papers tool")
+        raise NotImplementedError("TODO [Lab 2.2b]: Implement get_author_papers tool")
 
     def _register_default_tools(self) -> None:
         """Register the default research tools with their JSON schemas."""
@@ -142,19 +158,6 @@ class ResearchMCPServer:
             handler=self.get_paper_details,
         )
         self.register_tool(
-            name="get_recent_papers",
-            description="Retrieve recent papers on a specific topic, ordered by publication year.",
-            parameters={
-                "type": "object",
-                "properties": {
-                    "topic": {"type": "string", "description": "Topic or field name, e.g. 'agent'"},
-                    "limit": {"type": "integer", "description": "Maximum number of papers", "default": 5},
-                },
-                "required": ["topic"],
-            },
-            handler=self.get_recent_papers,
-        )
-        self.register_tool(
             name="export_bibtex",
             description="Export standard BibTeX citation entry for a research paper.",
             parameters={
@@ -166,51 +169,99 @@ class ResearchMCPServer:
             },
             handler=self.export_bibtex,
         )
-        self.register_tool(
-            name="get_author_papers",
-            description="Retrieve all research papers authored by a specific researcher.",
-            parameters={
-                "type": "object",
-                "properties": {
-                    "author_name": {"type": "string", "description": "Name of author, e.g. 'Vaswani'"},
-                },
-                "required": ["author_name"],
-            },
-            handler=self.get_author_papers,
-        )
+
+        # ==============================================================================
+        # TODO [Lab 2.3]: Register your two new MCP tools (~30 lines)
+        # ------------------------------------------------------------------------------
+        # Register `get_recent_papers` and `get_author_papers` using `self.register_tool()`.
+        # Follow the same pattern as the registrations above.
+        #
+        # get_recent_papers schema:
+        #   - topic (string, required): Topic or field name, e.g. 'agent'
+        #   - limit (integer, default 5): Maximum number of papers to return
+        #
+        # get_author_papers schema:
+        #   - author_name (string, required): Name of author, e.g. 'Vaswani'
+        # ==============================================================================
+        pass  # Remove this line when you add your registrations
 
     # --------------------------------------------------------------------------
     # JSON-RPC 2.0 Protocol Dispatcher
     # --------------------------------------------------------------------------
 
     def handle_request(self, request_str: str) -> str:
-        """Handle incoming JSON-RPC 2.0 request and return JSON response.
+        """Handle incoming JSON-RPC 2.0 request and return JSON response."""
+        # Parse incoming JSON-RPC message
+        try:
+            req = json.loads(request_str)
+        except Exception as e:
+            return json.dumps({
+                "jsonrpc": "2.0",
+                "id": None,
+                "error": {"code": -32700, "message": f"Parse error: {e}"},
+            })
 
-        # ==============================================================================
-        # TODO [Lab 2.1]: JSON-RPC 2.0 Protocol Dispatcher (~65 lines)
-        # ------------------------------------------------------------------------------
-        # The Model Context Protocol uses JSON-RPC 2.0 messages over standard I/O:
-        #
-        # 1. Parse `request_str` with `json.loads()`. If invalid JSON, return standard
-        #    JSON-RPC parse error (-32700).
-        # 2. Extract `id`, `method`, and `params`.
-        # 3. Handle method == "initialize":
-        #    - Return protocolVersion ("2024-11-05"), serverInfo ({name, version}),
-        #      and capabilities ({"tools": {}}).
-        # 4. Handle method == "ping":
-        #    - Return empty result: {"jsonrpc": "2.0", "id": req_id, "result": {}}.
-        # 5. Handle method == "tools/list":
-        #    - Return list of registered tools with name, description, and inputSchema.
-        # 6. Handle method == "tools/call":
-        #    - Extract tool name and arguments from params.
-        #    - If tool not registered, return method not found error (-32601).
-        #    - Execute handler with arguments, format result as:
-        #      {"content": [{"type": "text", "text": str(res)}], "isError": False}
-        #    - Catch any exceptions and set "isError": True.
-        # 7. For unknown methods, return JSON-RPC error code -32601.
-        # ==============================================================================
-        """
-        raise NotImplementedError("TODO [Lab 2.1]: Implement handle_request dispatcher")
+        req_id = req.get("id")
+        method = req.get("method")
+        params = req.get("params", {})
+
+        # Route to the appropriate MCP method handler
+        if method == "initialize":
+            return json.dumps({
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "result": {
+                    "protocolVersion": "2024-11-05",
+                    "serverInfo": {"name": self.name, "version": self.version},
+                    "capabilities": {"tools": {}},
+                },
+            })
+
+        elif method == "ping":
+            return json.dumps({"jsonrpc": "2.0", "id": req_id, "result": {}})
+
+        elif method == "tools/list":
+            tools_list = [
+                {
+                    "name": t["name"],
+                    "description": t["description"],
+                    "inputSchema": t["inputSchema"],
+                }
+                for t in self.tools.values()
+            ]
+            return json.dumps({"jsonrpc": "2.0", "id": req_id, "result": {"tools": tools_list}})
+
+        elif method == "tools/call":
+            tool_name = params.get("name")
+            tool_args = params.get("arguments", {})
+
+            # Guard: tool must be registered
+            if tool_name not in self.tools:
+                return json.dumps({
+                    "jsonrpc": "2.0",
+                    "id": req_id,
+                    "error": {"code": -32601, "message": f"Method/Tool '{tool_name}' not found"},
+                })
+
+            # ==============================================================================
+            # TODO [Lab 2.1]: Execute the tool and format the MCP result (~12 lines)
+            # ------------------------------------------------------------------------------
+            # The tool handler is at `self.tools[tool_name]["handler"]`.
+            # 1. Retrieve the handler from `self.tools[tool_name]["handler"]`.
+            # 2. Call it with `**tool_args` inside a try/except block.
+            # 3. On success, return a JSON-RPC 2.0 result with:
+            #      "result": {"content": [{"type": "text", "text": str(res)}], "isError": False}
+            # 4. On exception, return the same structure but with:
+            #      "content": [{"type": "text", "text": f"Error: {e}"}], "isError": True
+            # ==============================================================================
+            raise NotImplementedError("TODO [Lab 2.1]: Execute tool and return MCP-formatted result")
+
+        # Unknown method
+        return json.dumps({
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "error": {"code": -32601, "message": f"Unsupported method '{method}'"},
+        })
 
     def run_stdio(self) -> None:
         """Run server listening for JSON-RPC messages on stdin and writing to stdout."""

@@ -47,62 +47,93 @@ class ReActAgent(BaseAgent):
     def _execute_tool_call(self, tool_call: ToolCall) -> str:
         """Execute a single tool call from the model with robust error handling.
 
-        # ==============================================================================
-        # TODO [Lab 1.4]: Safe Tool Execution & Error Handling (~45 lines)
-        # ------------------------------------------------------------------------------
-        # When an LLM outputs a tool call, we must safely look up and run the function:
-        #
-        # 1. Lookup the tool in `self.registry.get_tool(tool_call.name)`.
-        #    If the tool is NOT found, log an error and return an informative error message
-        #    listing the available registered tools. Do not crash!
-        # 2. Parse arguments: `tool_call.arguments` might be a dict or a raw JSON string.
-        #    If it's a string, deserialize it with `json.loads()`. Catch JSONDecodeError
-        #    and return a clean error string if malformed.
-        # 3. Log the action: call `self.logger.action(tool_call.name, args)`.
-        # 4. Execute the tool: call `tool.execute(**args)` wrapped in a try/except block.
-        # 5. Format the result:
-        #    - If result is a dict or list, format with `json.dumps(..., indent=2)`.
-        #    - Otherwise convert to string.
-        # 6. Log the observation: call `self.logger.observation(...)`.
-        # 7. Return the formatted result string.
-        # ==============================================================================
+        Basic implementation provided: tool lookup and argument JSON deserialization.
         """
-        raise NotImplementedError("TODO [Lab 1.4]: Implement _execute_tool_call")
+        # 1. Lookup the tool in registry
+        tool = self.registry.get_tool(tool_call.name)
+        if not tool:
+            err = f"Error: Tool '{tool_call.name}' is not registered. Available tools: {[t.name for t in self.registry.list_tools()]}"
+            self.logger.error(err)
+            return err
+
+        # 2. Parse arguments (handles dictionary or raw JSON string from LLM)
+        args = tool_call.arguments
+        if isinstance(args, str):
+            try:
+                args = json.loads(args)
+            except Exception as e:
+                err = f"Error: Failed to parse tool arguments JSON: {e}"
+                self.logger.error(err)
+                return err
+
+        # ==============================================================================
+        # TODO [Lab 1.3]: Execute Tool and Format Observation (~15 lines)
+        # ------------------------------------------------------------------------------
+        # Extend the execution part:
+        # 1. Log the action: call `self.logger.action(tool_call.name, args)`.
+        # 2. Execute the tool: call `raw_result = tool.execute(**args)` wrapped in try/except.
+        # 3. Format the result string:
+        #    - If result is a dict or list, format with `json.dumps(raw_result, indent=2)`.
+        #    - Otherwise convert to `str(raw_result)`.
+        # 4. Log the observation: call `self.logger.observation(result_str)`.
+        # 5. Return `result_str`. Catch any Exception and return error string instead of crashing.
+        # ==============================================================================
+        raise NotImplementedError("TODO [Lab 1.3]: Implement tool execution and observation logging")
 
     def run(self, user_query: str, **kwargs: Any) -> str:
         """Run the ReAct agent on a user query until termination or max iterations.
 
-        # ==============================================================================
-        # TODO [Lab 1.5]: The Core ReAct Agent Loop (~85 lines)
-        # ------------------------------------------------------------------------------
-        # Implement the complete Thought -> Action -> Observation loop:
-        #
-        # 1. Initialize `self.messages` with:
-        #    - A system message containing `self.system_prompt`
-        #    - A user message containing `user_query`
-        # 2. Reset `self.step_count = 0`.
-        # 3. Retrieve available tool schemas from `self.registry.get_schemas()`.
-        # 4. Enter a loop while `self.step_count < self.max_iterations`:
-        #    a. Increment `self.step_count`.
-        #    b. Call the LLM: `self.client.complete(messages=self.messages, tools=tool_schemas)`.
-        #    c. Log the model's internal thought (if `response.content` is present)
-        #       using `self.logger.thought(...)`.
-        #    d. Check for Termination:
-        #       If `response.tool_calls` is empty or None:
-        #       - The agent has arrived at its final answer!
-        #       - Log final answer: `self.logger.final_answer(...)`.
-        #       - Append an assistant message to `self.messages`.
-        #       - Return the final answer string.
-        #    e. If `response.tool_calls` are present:
-        #       - Append an assistant message to `self.messages` containing both
-        #         `response.content` and `response.tool_calls`.
-        #       - For each tool call in `response.tool_calls`:
-        #         * Execute it with `self._execute_tool_call(tc)`
-        #         * Append a Message with role="tool", tool_call_id=tc.id,
-        #           name=tc.name, content=observation.
-        # 5. If loop exits because `step_count >= max_iterations`:
-        #    - Log error: agent reached maximum iterations.
-        #    - Return an informative error message explaining that the limit was reached.
-        # ==============================================================================
+        Basic implementation provided: message initialization, schema retrieval,
+        while loop skeleton, thought logging, final answer termination, and iteration limit.
         """
-        raise NotImplementedError("TODO [Lab 1.5]: Implement ReAct run loop")
+        # 1. Initialize context with system prompt and user inquiry
+        self.messages = [
+            Message(role="system", content=self.system_prompt),
+            Message(role="user", content=user_query),
+        ]
+        self.step_count = 0
+        tool_schemas = self.registry.get_schemas()
+
+        while self.step_count < self.max_iterations:
+            self.step_count += 1
+
+            # Step 1: Model completion request
+            response = self.client.complete(
+                messages=self.messages,
+                tools=tool_schemas,
+            )
+
+            # Step 2: Handle model reasoning / thought
+            thought_text = response.content or ""
+            if thought_text:
+                self.logger.thought(thought_text)
+
+            # Step 3: Check for termination (no tool calls requested)
+            if not response.tool_calls:
+                final_answer = thought_text or "Task completed."
+                self.logger.final_answer(final_answer)
+                self.messages.append(Message(role="assistant", content=final_answer))
+                return final_answer
+
+            # Step 4: Model requested one or more tool calls
+            # ==============================================================================
+            # TODO [Lab 1.4]: Handle Tool Calls and Record Observations in ReAct Loop (~15 lines)
+            # ------------------------------------------------------------------------------
+            # When the LLM decides to take an action:
+            # 1. Append the assistant message with `thought_text` and `response.tool_calls`
+            #    to `self.messages`:
+            #    `self.messages.append(Message(role="assistant", content=thought_text, tool_calls=response.tool_calls))`
+            # 2. For each tool call `tc` in `response.tool_calls`:
+            #    a. Execute it: `observation = self._execute_tool_call(tc)`
+            #    b. Append a tool observation message to `self.messages`:
+            #       `self.messages.append(Message(role="tool", name=tc.name, tool_call_id=tc.id, content=observation))`
+            # ==============================================================================
+            raise NotImplementedError("TODO [Lab 1.4]: Handle tool calls and observations in ReAct loop")
+
+        # 5. Iteration limit reached
+        fallback_msg = (
+            f"Agent reached maximum iterations ({self.max_iterations}) without reaching a final answer. "
+            "Please refine your query or increase max_iterations."
+        )
+        self.logger.error(fallback_msg)
+        return fallback_msg

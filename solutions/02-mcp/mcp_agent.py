@@ -38,6 +38,16 @@ def _load_lab01():
 
 ReActAgent, ToolRegistry = _load_lab01()
 
+MCP_SYSTEM_PROMPT = """You are the University Research Assistant connected to specialized bibliographic tools via the Model Context Protocol (MCP).
+
+Your responsibility is to assist researchers and graduate students in exploring academic literature, discovering recent publications, retrieving paper details, and analyzing research findings.
+
+Protocol Rules & Constraints:
+1. Always utilize the discovered MCP tools (search_papers, get_paper_details, get_recent_papers) to query bibliographic metadata.
+2. Provide exact paper identifiers (arXiv IDs, DOIs), author lists, and publication years in your synthesis.
+3. If an MCP tool returns an error or no matches, communicate the error transparently and suggest query refinements.
+4. Summarize literature objectively and highlight key architectural or theoretical contributions."""
+
 
 class MCPAgent(BaseAgent):
     """University Research Assistant powered by MCP-discovered tools."""
@@ -47,9 +57,11 @@ class MCPAgent(BaseAgent):
         mcp_client: Optional[MCPClient] = None,
         llm_client: Optional[BaseLLMClient] = None,
         verbose: bool = True,
+        system_prompt: str = MCP_SYSTEM_PROMPT,
     ):
         self.client = llm_client or get_llm_client()
         self.logger = AgentLogger(name="MCPAgent", verbose=verbose)
+        self.system_prompt = system_prompt
         if mcp_client is None:
             # Default to in-memory research MCP server for instant startup
             server = ResearchMCPServer()
@@ -65,6 +77,7 @@ class MCPAgent(BaseAgent):
             llm_client=self.client,
             tool_registry=self.tool_registry,
             verbose=verbose,
+            system_prompt=self.system_prompt,
         )
 
     def _load_mcp_tools(self) -> None:

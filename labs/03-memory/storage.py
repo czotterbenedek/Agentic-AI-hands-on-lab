@@ -20,39 +20,45 @@ class SQLiteMemoryStorage:
         return conn
 
     def _init_db(self) -> None:
-        """Create database tables if they do not exist.
+        """Create database tables if they do not exist."""
+        with self._get_connection() as conn:
+            # Conversation history table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS conversations (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id     TEXT NOT NULL,
+                    session_id  TEXT NOT NULL,
+                    role        TEXT NOT NULL,
+                    content     TEXT NOT NULL,
+                    created_at  REAL NOT NULL
+                )
+            """)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_conversations_user_session
+                ON conversations (user_id, session_id)
+            """)
 
-        # ==============================================================================
-        # TODO [Lab 3.1]: Initialize SQLite Database Schema (~45 lines)
-        # ------------------------------------------------------------------------------
-        # Create three tables using `self._get_connection()`:
-        #
-        # 1. `conversations`:
-        #    - id: INTEGER PRIMARY KEY AUTOINCREMENT
-        #    - user_id: TEXT NOT NULL
-        #    - session_id: TEXT NOT NULL
-        #    - role: TEXT NOT NULL
-        #    - content: TEXT NOT NULL
-        #    - created_at: REAL NOT NULL
-        #    - Index on (user_id, session_id)
-        #
-        # 2. `user_preferences`:
-        #    - user_id: TEXT NOT NULL
-        #    - pref_key: TEXT NOT NULL
-        #    - pref_value: TEXT NOT NULL
-        #    - updated_at: REAL NOT NULL
-        #    - PRIMARY KEY (user_id, pref_key) -> ensures one value per user per key!
-        #
-        # 3. `research_notes`:
-        #    - id: INTEGER PRIMARY KEY AUTOINCREMENT
-        #    - user_id: TEXT NOT NULL
-        #    - topic: TEXT NOT NULL
-        #    - content: TEXT NOT NULL
-        #    - created_at: REAL NOT NULL
-        #    - Index on (user_id, topic)
-        # ==============================================================================
-        """
-        raise NotImplementedError("TODO [Lab 3.1]: Implement _init_db")
+            # ==============================================================================
+            # TODO [Lab 3.1]: Create the remaining two tables (~25 lines)
+            # ------------------------------------------------------------------------------
+            # 2. `user_preferences`:
+            #    - user_id: TEXT NOT NULL
+            #    - pref_key: TEXT NOT NULL
+            #    - pref_value: TEXT NOT NULL
+            #    - updated_at: REAL NOT NULL
+            #    - PRIMARY KEY (user_id, pref_key)  -> one value per user per key!
+            #
+            # 3. `research_notes`:
+            #    - id: INTEGER PRIMARY KEY AUTOINCREMENT
+            #    - user_id: TEXT NOT NULL
+            #    - topic: TEXT NOT NULL
+            #    - content: TEXT NOT NULL
+            #    - created_at: REAL NOT NULL
+            #    - Index on (user_id, topic)
+            # ==============================================================================
+            raise NotImplementedError("TODO [Lab 3.1]: Create user_preferences and research_notes tables")
+
+            conn.commit()
 
     # --------------------------------------------------------------------------
     # Conversation History Methods
@@ -120,16 +126,17 @@ class SQLiteMemoryStorage:
         raise NotImplementedError("TODO [Lab 3.2b]: Implement get_preferences")
 
     def delete_preference(self, user_id: str, key: str) -> bool:
-        """Delete a single preference for a user.
-
-        # ==============================================================================
-        # TODO [Lab 3.2c]: Delete Preference (~15 lines)
-        # ------------------------------------------------------------------------------
-        # 1. Execute `DELETE FROM user_preferences WHERE user_id = ? AND pref_key = ?`.
-        # 2. Return True if a row was deleted (cursor.rowcount > 0), else False.
-        # ==============================================================================
-        """
-        raise NotImplementedError("TODO [Lab 3.2c]: Implement delete_preference")
+        """Delete a single preference for a user."""
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                """
+                DELETE FROM user_preferences
+                WHERE user_id = ? AND pref_key = ?
+                """,
+                (user_id, key.strip().lower()),
+            )
+            conn.commit()
+            return cursor.rowcount > 0
 
     # --------------------------------------------------------------------------
     # Research Notes Methods

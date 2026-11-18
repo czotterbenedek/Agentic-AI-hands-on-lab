@@ -8,11 +8,27 @@ from shared.llm_client import BaseLLMClient, get_llm_client
 from shared.logging import AgentLogger
 
 try:
-    from .schemas import HandoffMessage, SharedContext, AgentRole
+    from .schemas import HandoffMessage, SharedContext, AgentRole, AgentState
     from .specialists import ResearchSpecialist, AnalysisSpecialist
 except ImportError:
-    from schemas import HandoffMessage, SharedContext, AgentRole
+    from schemas import HandoffMessage, SharedContext, AgentRole, AgentState
     from specialists import ResearchSpecialist, AnalysisSpecialist
+
+
+SUPERVISOR_SYSTEM_PROMPT = """You are the Academic Research Supervisor Agent orchestrating a team of specialist AI agents in a LangGraph state workflow.
+
+Your role is to coordinate the research lifecycle to address graduate-level academic inquiries.
+
+Your Team Members:
+1. 'researcher' (Research Specialist): Queries academic paper databases, retrieves arXiv/bibliographic records, and extracts relevant literature.
+2. 'analyst' (Analysis Specialist): Analyzes methodology, performs comparative study, and calculates citation statistics across retrieved papers.
+
+Supervisor Responsibilities:
+- Deconstruct complex academic questions into clear, actionable subtasks for specialists.
+- Delegate first to 'researcher' if relevant papers have not yet been retrieved.
+- Delegate next to 'analyst' once papers are collected to compute citation metrics and compare architectures.
+- Halt further delegation ('finish') once sufficient literature and quantitative analysis are gathered.
+- Synthesize an executive report featuring Literature Review, Quantitative Comparison, and Methodological Insights."""
 
 
 class SupervisorAgent(BaseAgent):
@@ -23,11 +39,13 @@ class SupervisorAgent(BaseAgent):
         llm_client: Optional[BaseLLMClient] = None,
         max_delegation_depth: int = 4,
         verbose: bool = True,
+        system_prompt: str = SUPERVISOR_SYSTEM_PROMPT,
     ):
         self.role = AgentRole.SUPERVISOR
         self.client = llm_client or get_llm_client()
         self.max_delegation_depth = max_delegation_depth
         self.logger = AgentLogger(name="SupervisorAgent", verbose=verbose)
+        self.system_prompt = system_prompt
         self.researcher = ResearchSpecialist(llm_client=self.client, verbose=verbose)
         self.analyst = AnalysisSpecialist(llm_client=self.client, verbose=verbose)
 
@@ -77,6 +95,41 @@ class SupervisorAgent(BaseAgent):
         # ----------------------------------------------------------------------
         context.final_synthesis = self.synthesize_report(context)
         return context
+
+    def node_function(self, state: AgentState) -> AgentState:
+        """LangGraph node execution function for the Supervisor Agent."""
+        iter_count = state.get("iteration_count", 0)
+        self.logger.log("NODE_EXECUTE", f"[LangGraph Node: Supervisor] Evaluating state at hop {iter_count}")
+
+        # Check guardrails
+        if iter_count >= self.max_delegation_depth:
+            self.logger.error("Supervisor: Max delegation depth reached in graph. Terminating.")
+            final_report = self.synthesize_from_state(state)
+            return {**state, "next_step": "finish", "final_report": final_report}
+
+        # Step 1: Literature search needed?
+        if not state.get("retrieved_papers"):
+            self.logger.log("ROUTING", "Supervisor routing to -> 'researcher'")
+            return {**state, "next_step": "researcher"}
+
+        # Step 2: Analysis needed?
+        if not state.get("analysis_artifacts"):
+            self.logger.log("ROUTING", "Supervisor routing to -> 'analyst'")
+            return {**state, "next_step": "analyst"}
+
+        # Step 3: All artifacts collected -> synthesize final report and finish
+        self.logger.log("ROUTING", "Supervisor synthesizing final report -> 'finish'")
+        final_report = self.synthesize_from_state(state)
+        return {**state, "next_step": "finish", "final_report": final_report}
+
+    def synthesize_from_state(self, state: AgentState) -> str:
+        """Synthesize report directly from LangGraph AgentState dictionary."""
+        ctx = SharedContext(
+            raw_query=state.get("query", ""),
+            retrieved_papers=state.get("retrieved_papers", []),
+            analysis_artifacts=state.get("analysis_artifacts", {}),
+        )
+        return self.synthesize_report(ctx)
 
     def synthesize_report(self, context: SharedContext) -> str:
         """Synthesize findings from both specialists into an executive academic literature report."""

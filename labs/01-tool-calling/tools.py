@@ -71,28 +71,63 @@ RESEARCH_PAPERS_DB: List[Dict[str, Any]] = [
 def generate_json_schema(func: Callable[..., Any]) -> Dict[str, Any]:
     """Generate a JSON schema for a Python function's parameters from type hints and docstrings.
 
-    # ==============================================================================
-    # TODO [Lab 1.1]: Automatic JSON Schema Generation (~40 lines)
-    # ------------------------------------------------------------------------------
-    # In function-calling models, tools must be declared using standard JSON Schema.
-    # Inspect the given function `func` to dynamically generate a valid JSON Schema:
-    #
-    # 1. Inspect function parameters using `inspect.signature(func)` and `get_type_hints(func)`.
-    # 2. Map Python types to JSON Schema types:
-    #    str -> "string", int -> "integer", float -> "number", bool -> "boolean",
-    #    list -> "array", dict -> "object".
-    # 3. Parse docstrings to extract parameter descriptions (e.g. from `:param <name>: <desc>`
-    #    or markdown-style bullet points).
-    # 4. Identify required parameters (parameters without default values, ignoring self/cls).
-    # 5. Return a dictionary in the standard format:
-    #    {
-    #        "type": "object",
-    #        "properties": { <param_name>: {"type": ..., "description": ...}, ... },
-    #        "required": [ ... ]
-    #    }
-    # ==============================================================================
+    Prepared in advance: Inspects function signatures, maps Python types to JSON Schema types,
+    and extracts parameter descriptions from docstrings.
     """
-    raise NotImplementedError("TODO [Lab 1.1]: Implement generate_json_schema")
+    sig = inspect.signature(func)
+    type_hints = get_type_hints(func)
+    properties: Dict[str, Any] = {}
+    required: List[str] = []
+
+    type_mapping = {
+        str: "string",
+        int: "integer",
+        float: "number",
+        bool: "boolean",
+        list: "array",
+        dict: "object",
+        List[str]: "array",
+        List[int]: "array",
+        List[Dict[str, Any]]: "array",
+    }
+
+    doc = inspect.getdoc(func) or ""
+    param_docs: Dict[str, str] = {}
+    for line in doc.splitlines():
+        line = line.strip()
+        match = re.match(r"^:param\s+(\w+):\s*(.+)$", line)
+        if match:
+            param_docs[match.group(1)] = match.group(2)
+        elif line.startswith("- ") and ":" in line:
+            parts = line[2:].split(":", 1)
+            param_docs[parts[0].strip()] = parts[1].strip()
+
+    for name, param in sig.parameters.items():
+        if name in ("self", "cls"):
+            continue
+
+        param_type = type_hints.get(name, str)
+        json_type = type_mapping.get(param_type, "string")
+        prop: Dict[str, Any] = {
+            "type": json_type,
+            "description": param_docs.get(name, f"Parameter `{name}`"),
+        }
+
+        if json_type == "array":
+            prop["items"] = {"type": "string"}
+
+        if param.default is inspect.Parameter.empty:
+            required.append(name)
+        else:
+            prop["default"] = param.default
+
+        properties[name] = prop
+
+    return {
+        "type": "object",
+        "properties": properties,
+        "required": required,
+    }
 
 
 class ToolRegistry:
@@ -147,7 +182,7 @@ def calculate(expression: str) -> str:
     :param expression: Mathematical expression string, e.g. '125000 / 7' or '18500 + 12000'
 
     # ==============================================================================
-    # TODO [Lab 1.2]: Safe Calculation Tool (~30 lines)
+    # TODO [Lab 1.1]: Safe Calculation Tool (~30 lines)
     # ------------------------------------------------------------------------------
     # Security is critical when executing LLM-generated code or math:
     # 1. Clean and strip the input expression.
@@ -160,7 +195,7 @@ def calculate(expression: str) -> str:
     # 5. Catch and return any evaluation errors as clear error strings instead of crashing.
     # ==============================================================================
     """
-    raise NotImplementedError("TODO [Lab 1.2]: Implement safe calculate tool")
+    raise NotImplementedError("TODO [Lab 1.1]: Implement safe calculate tool")
 
 
 def search_papers(query: str, limit: int = 5) -> List[Dict[str, Any]]:
@@ -213,7 +248,7 @@ def compute_citation_stats(paper_ids: List[str]) -> Dict[str, Any]:
     :param paper_ids: List of paper IDs to aggregate
 
     # ==============================================================================
-    # TODO [Lab 1.3]: Multi-Paper Citation Aggregation Tool (~35 lines)
+    # TODO [Lab 1.2]: Multi-Paper Citation Aggregation Tool (~30 lines)
     # ------------------------------------------------------------------------------
     # Student Exercise: Implement a tool that computes aggregate metrics:
     # 1. Iterate over the provided `paper_ids` and fetch details for each paper using
@@ -230,7 +265,7 @@ def compute_citation_stats(paper_ids: List[str]) -> Dict[str, Any]:
     # 5. Return the resulting dictionary.
     # ==============================================================================
     """
-    raise NotImplementedError("TODO [Lab 1.3]: Implement compute_citation_stats tool")
+    raise NotImplementedError("TODO [Lab 1.2]: Implement compute_citation_stats tool")
 
 
 def summarize_paper(paper_id: str) -> str:

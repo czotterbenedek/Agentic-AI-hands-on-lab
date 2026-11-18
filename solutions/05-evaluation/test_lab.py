@@ -80,6 +80,18 @@ def test_evaluator_harness():
     assert len(results["summary"]) == 4
 
 
+def test_mlflow_tracking_logging():
+    """Verify MLflow runs are tracked and parameter/metric metadata is recorded."""
+    evaluator = AgentEvaluator()
+    results = evaluator.run_all()
+    # Verify tracker logged all 4 configurations
+    assert len(evaluator.local_tracker.runs) == 4
+    for run in evaluator.local_tracker.runs:
+        assert "config_name" in run["params"]
+        assert "task_success_rate" in run["metrics"]
+        assert "tool_selection_f1" in run["metrics"]
+
+
 if __name__ == "__main__":
     tests = [
         test_task_success_metric,
@@ -87,6 +99,7 @@ if __name__ == "__main__":
         test_tool_execution_success,
         test_efficiency_metric,
         test_evaluator_harness,
+        test_mlflow_tracking_logging,
     ]
     passed = 0
     for t in tests:

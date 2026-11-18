@@ -42,6 +42,17 @@ def _load_lab01():
 
 ReActAgent, get_default_tool_registry = _load_lab01()
 
+MEMORY_SYSTEM_PROMPT = """You are the University Research Assistant with Long-Term Memory, specialized in personalized academic advising, literature exploration, and research tracking.
+
+Your capabilities include accessing bibliographic tools (search_papers, get_paper_details, calculate) and maintaining persistent student preferences across sessions.
+
+Persistent Memory Guidelines:
+1. Always consult the injected student preferences and previous research notes below to personalize recommendations.
+2. If the user mentions their research interests (e.g., preferred topics, focus areas, methodology preferences), save them using the save_preference tool.
+3. If the user asks you to record a research insight, summary, or note, save it using the save_research_note tool.
+4. Maintain strict user isolation: only reference memories and preferences explicitly belonging to the active user profile.
+5. In your recommendations, explicitly highlight how recommended papers align with the user's recorded interests."""
+
 
 class MemoryAugmentedAgent(BaseAgent):
     """University Research Assistant with short-term history and persistent user memory."""
@@ -51,11 +62,13 @@ class MemoryAugmentedAgent(BaseAgent):
         memory_manager: Optional[MemoryManager] = None,
         llm_client: Optional[BaseLLMClient] = None,
         verbose: bool = True,
+        system_prompt: str = MEMORY_SYSTEM_PROMPT,
     ):
         self.client = llm_client or get_llm_client()
         self.memory = memory_manager or MemoryManager()
         self.logger = AgentLogger(name="MemoryAgent", verbose=verbose)
         self.verbose = verbose
+        self.system_prompt = system_prompt
 
     def run(
         self,
@@ -64,38 +77,27 @@ class MemoryAugmentedAgent(BaseAgent):
         session_id: str = "session_default",
         **kwargs: Any,
     ) -> str:
-        """Run agent on user query with persistent context injection and turn recording."""
-        # 1. Retrieve persistent memory context (preferences and notes)
-        memory_context = self.memory.get_system_context(user_id)
+        """Run agent on user query with persistent context injection and turn recording.
 
-        # 2. Prepare tool registry with research tools + memory tools
-        registry = get_default_tool_registry()
-        for t in self.memory.get_memory_tools(user_id):
-            registry._tools[t.name] = t
-
-        # 3. Build dynamic prompt
-        base_system = (
-            "You are the University Research Assistant, an intelligent academic agent.\n"
-            "You have access to bibliographic tools and persistent memory tools."
-        )
-        if memory_context:
-            full_prompt = f"{base_system}\n\n{memory_context}"
-        else:
-            full_prompt = base_system
-
-        # 4. Instantiate and run ReAct agent
-        agent = ReActAgent(
-            llm_client=self.client,
-            tool_registry=registry,
-            system_prompt=full_prompt,
-            verbose=self.verbose,
-        )
-
-        # Execute
-        answer = agent.run(user_query)
-
-        # 5. Record this conversation turn in persistent storage
-        self.memory.record_turn(user_id, session_id, "user", user_query)
-        self.memory.record_turn(user_id, session_id, "assistant", answer)
-
-        return answer
+        # ==============================================================================
+        # TODO [Lab 3.4]: Memory Context Injection and Execution Loop (~35 lines)
+        # ------------------------------------------------------------------------------
+        # Combine persistent memory with the ReAct execution loop:
+        #
+        # 1. Retrieve persistent memory context string: `self.memory.get_system_context(user_id)`.
+        # 2. Obtain base tool registry: `registry = get_default_tool_registry()`.
+        # 3. Register user memory tools: iterate `self.memory.get_memory_tools(user_id)`
+        #    and add each to `registry._tools[t.name] = t`.
+        # 4. Construct prompt:
+        #    If `memory_context` is non-empty, append it to `self.system_prompt`:
+        #    `full_prompt = f"{self.system_prompt}\\n\\n[Active Student Memory Context]:\\n{memory_context}"`
+        #    Else `full_prompt = self.system_prompt`.
+        # 5. Instantiate ReActAgent with the updated registry and system_prompt.
+        # 6. Execute agent: `answer = agent.run(user_query)`.
+        # 7. Record the turn in storage:
+        #    `self.memory.record_turn(user_id, session_id, "user", user_query)`
+        #    `self.memory.record_turn(user_id, session_id, "assistant", answer)`
+        # 8. Return `answer`.
+        # ==============================================================================
+        """
+        raise NotImplementedError("TODO [Lab 3.4]: Implement run method with memory injection")

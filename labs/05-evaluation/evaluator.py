@@ -1,4 +1,4 @@
-"""Evaluation harness executing benchmark tests across 4 agent configurations (Starter Lab)."""
+"""Evaluation harness executing benchmark tests across 4 agent configurations with MLflow (Starter Lab)."""
 
 import json
 import os
@@ -12,7 +12,15 @@ try:
 except ImportError:
     pd = None
 
+try:
+    import mlflow
+    HAS_MLFLOW = True
+except ImportError:
+    HAS_MLFLOW = False
+    mlflow = None
+
 from shared.agent import BaseAgent, Message
+from shared.config import get_settings
 from shared.llm_client import BaseLLMClient, get_llm_client
 
 try:
@@ -66,7 +74,12 @@ def _load_components():
     s4.loader.exec_module(m4)
     SupervisorAgent = m4.SupervisorAgent
 
-    return ReActAgent, MemoryAugmentedAgent, SupervisorAgent
+    s4_orch = importlib.util.spec_from_file_location("orch_mod_e", lab4_dir / "orchestrator.py")
+    m4_orch = importlib.util.module_from_spec(s4_orch)
+    s4_orch.loader.exec_module(m4_orch)
+    MultiAgentOrchestrator = m4_orch.MultiAgentOrchestrator
+
+    return ReActAgent, MemoryAugmentedAgent, SupervisorAgent, MultiAgentOrchestrator
 
 
 class BasicLLMWrapper(BaseAgent):
@@ -83,22 +96,63 @@ class BasicLLMWrapper(BaseAgent):
         return resp.content or ""
 
 
+class LocalMLflowTracker:
+    """Fallback local MLflow tracker storing parameters and metrics when MLflow is not installed."""
+
+    def __init__(self, tracking_uri: str = "./mlruns", experiment_name: str = "agent_eval"):
+        self.tracking_uri = tracking_uri
+        self.experiment_name = experiment_name
+        self.runs: List[Dict[str, Any]] = []
+
+    def log_run(self, run_name: str, params: Dict[str, Any], metrics: Dict[str, Any]) -> None:
+        run_record = {
+            "experiment": self.experiment_name,
+            "run_name": run_name,
+            "timestamp": time.time(),
+            "params": params,
+            "metrics": metrics,
+        }
+        self.runs.append(run_record)
+        os.makedirs(self.tracking_uri, exist_ok=True)
+        out_file = os.path.join(self.tracking_uri, f"{run_name.replace(' ', '_').replace('.', '')}.json")
+        try:
+            with open(out_file, "w", encoding="utf-8") as f:
+                json.dump(run_record, f, indent=2)
+        except Exception:
+            pass
+
+
 class AgentEvaluator:
-    """Benchmark runner evaluating the 4 configurations specified in implementation plan."""
+    """Benchmark runner evaluating the 4 configurations with MLflow tracking."""
 
     def __init__(self, test_cases_path: Optional[str] = None):
+        settings = get_settings()
         if test_cases_path is None:
             test_cases_path = os.path.join(os.path.dirname(__file__), "test_cases.json")
         self.test_cases_path = test_cases_path
         self.test_cases: List[Dict[str, Any]] = self._load_test_cases()
-        ReActAgent, MemoryAugmentedAgent, SupervisorAgent = _load_components()
+        self.experiment_name = settings.mlflow_experiment_name
+        self.tracking_uri = settings.mlflow_tracking_uri
+
+        # MLflow setup
+        if HAS_MLFLOW:
+            try:
+                mlflow.set_tracking_uri(self.tracking_uri)
+                mlflow.set_experiment(self.experiment_name)
+            except Exception:
+                pass
+        self.local_tracker = LocalMLflowTracker(self.tracking_uri, self.experiment_name)
+
+        ReActAgent, MemoryAugmentedAgent, SupervisorAgent, MultiAgentOrchestrator = _load_components()
 
         # Initialize the 4 target configurations
         self.configurations: Dict[str, BaseAgent] = {
             "1. Basic LLM (No tools)": BasicLLMWrapper(),
             "2. Single ReAct Agent": ReActAgent(verbose=False),
             "3. Agent with Memory": MemoryAugmentedAgent(verbose=False),
-            "4. Multi-Agent System": SupervisorAgent(verbose=False),
+            "4. Multi-Agent (LangGraph)": MultiAgentOrchestrator(
+                supervisor=SupervisorAgent(verbose=False), verbose=False
+            ),
         }
 
     def _load_test_cases(self) -> List[Dict[str, Any]]:
@@ -112,7 +166,7 @@ class AgentEvaluator:
         """Run all test cases against a single agent configuration.
 
         # ==============================================================================
-        # TODO [Lab 5.4]: Test Case Runner and Execution Harness (~65 lines)
+        # TODO [Lab 5.4]: Test Case Runner and Execution Harness (~45 lines)
         # ------------------------------------------------------------------------------
         # For each test case in `self.test_cases`:
         # 1. Start timer `t0 = time.time()`.
@@ -133,20 +187,25 @@ class AgentEvaluator:
         raise NotImplementedError("TODO [Lab 5.4]: Implement evaluate_configuration")
 
     def run_all(self) -> Dict[str, Any]:
-        """Execute evaluation across all 4 configurations and aggregate summary results.
+        """Execute evaluation across all 4 configurations and track with MLflow.
 
         # ==============================================================================
-        # TODO [Lab 5.5]: Metric Aggregation & Comparison Summary (~55 lines)
+        # TODO [Lab 5.5]: Metric Aggregation & MLflow Tracking (~45 lines)
         # ------------------------------------------------------------------------------
         # 1. Iterate over `self.configurations.items()`:
-        #    Call `self.evaluate_configuration(name, agent)` and collect all detailed records.
-        # 2. For each configuration, aggregate:
-        #    - Success Rate: mean(success) * 100
-        #    - Tool F1 Score: mean(f1)
-        #    - Avg Steps: mean(steps)
-        #    - Avg Latency: mean(latency_s)
-        # 3. Build summary list of dicts.
-        # 4. Return {"summary": summary, "detailed_records": all_records}.
+        #    Call `self.evaluate_configuration(name, agent)` and collect detailed records.
+        # 2. For each configuration, aggregate metrics:
+        #    - success_rate = mean(success)
+        #    - avg_f1 = mean(f1)
+        #    - avg_steps = mean(steps)
+        #    - avg_latency = mean(latency_s)
+        # 3. Log parameters & metrics to MLflow:
+        #    `params = {"config_name": name, "model": settings.llm_model, ...}`
+        #    `metrics = {"task_success_rate": success_rate, "tool_selection_f1": avg_f1, ...}`
+        #    If `HAS_MLFLOW`: use `with mlflow.start_run(run_name=name): ...`
+        #    Also log to `self.local_tracker.log_run(name, params, metrics)`.
+        # 4. Build summary list of dicts.
+        # 5. Return {"summary": summary, "detailed_records": all_records}.
         # ==============================================================================
         """
         raise NotImplementedError("TODO [Lab 5.5]: Implement run_all")

@@ -4,13 +4,20 @@
 # Core OpenAI SDK for LLM communication (works with OpenAI, Ollama, VLLM)
 openai>=1.12.0
 
+# Multi-Agent Orchestration Framework (Module 4)
+langgraph>=0.2.0
+langchain-core>=0.3.0
+
+# Experiment Tracking and Evaluation (Module 5)
+mlflow>=2.10.0
+
 # Data validation and settings
 pydantic>=2.4.0
 
 # Environment variables
 python-dotenv>=1.0.0
 
-# Model Context Protocol (MCP) official SDK
+# Model Context Protocol (MCP) official SDK (Module 2)
 mcp>=1.0.0
 
 # Testing

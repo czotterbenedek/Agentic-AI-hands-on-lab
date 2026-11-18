@@ -1,4 +1,4 @@
-"""Evaluation harness executing benchmark tests across 4 agent configurations."""
+"""Evaluation harness executing benchmark tests across 4 agent configurations with MLflow experiment tracking."""
 
 import json
 import os
@@ -12,7 +12,15 @@ try:
 except ImportError:
     pd = None
 
+try:
+    import mlflow
+    HAS_MLFLOW = True
+except ImportError:
+    HAS_MLFLOW = False
+    mlflow = None
+
 from shared.agent import BaseAgent, Message
+from shared.config import get_settings
 from shared.llm_client import BaseLLMClient, get_llm_client
 
 try:
@@ -64,43 +72,96 @@ def _load_components():
     s4.loader.exec_module(m4)
     SupervisorAgent = m4.SupervisorAgent
 
-    return ReActAgent, MemoryAugmentedAgent, SupervisorAgent
+    s4_orch = importlib.util.spec_from_file_location("orch_mod", lab4_dir / "orchestrator.py")
+    m4_orch = importlib.util.module_from_spec(s4_orch)
+    s4_orch.loader.exec_module(m4_orch)
+    MultiAgentOrchestrator = m4_orch.MultiAgentOrchestrator
+
+    return ReActAgent, MemoryAugmentedAgent, SupervisorAgent, MultiAgentOrchestrator
 
 
-class BasicLLMWrapper(BaseAgent):
-    """Configuration 1: Baseline LLM without any tools."""
+ReActAgent, MemoryAugmentedAgent, SupervisorAgent, MultiAgentOrchestrator = _load_components()
+
+
+class BasicLLMAgent(BaseAgent):
+    """Configuration 1: Direct model completion with no tool calling capabilities."""
 
     def __init__(self, llm_client: Optional[BaseLLMClient] = None):
         self.client = llm_client or get_llm_client()
 
     def run(self, user_query: str, **kwargs: Any) -> str:
-        resp = self.client.complete(
+        res = self.client.complete(
             messages=[Message(role="user", content=user_query)],
             tools=None,
         )
-        return resp.content or ""
+        return res.content or ""
+
+
+class LocalMLflowTracker:
+    """Fallback local MLflow tracker storing parameters and metrics when MLflow is not installed."""
+
+    def __init__(self, tracking_uri: str = "./mlruns", experiment_name: str = "agent_eval"):
+        self.tracking_uri = tracking_uri
+        self.experiment_name = experiment_name
+        self.runs: List[Dict[str, Any]] = []
+
+    def log_run(self, run_name: str, params: Dict[str, Any], metrics: Dict[str, Any]) -> None:
+        run_record = {
+            "experiment": self.experiment_name,
+            "run_name": run_name,
+            "timestamp": time.time(),
+            "params": params,
+            "metrics": metrics,
+        }
+        self.runs.append(run_record)
+        os.makedirs(self.tracking_uri, exist_ok=True)
+        out_file = os.path.join(self.tracking_uri, f"{run_name.replace(' ', '_').replace('.', '')}.json")
+        try:
+            with open(out_file, "w", encoding="utf-8") as f:
+                json.dump(run_record, f, indent=2)
+        except Exception:
+            pass
 
 
 class AgentEvaluator:
-    """Benchmark runner evaluating the 4 configurations specified in implementation plan."""
+    """Benchmark runner evaluating the four agent configurations with MLflow tracking."""
 
-    def __init__(self, test_cases_path: Optional[str] = None):
-        if test_cases_path is None:
-            test_cases_path = os.path.join(os.path.dirname(__file__), "test_cases.json")
-        self.test_cases_path = test_cases_path
-        self.test_cases: List[Dict[str, Any]] = self._load_test_cases()
-        ReActAgent, MemoryAugmentedAgent, SupervisorAgent = _load_components()
+    def __init__(
+        self,
+        test_cases_path: Optional[str] = None,
+        llm_client: Optional[BaseLLMClient] = None,
+        experiment_name: Optional[str] = None,
+    ):
+        settings = get_settings()
+        self.client = llm_client or get_llm_client()
+        self.test_cases_path = test_cases_path or str(
+            Path(__file__).resolve().parent / "test_cases.json"
+        )
+        self.test_cases = self._load_test_cases()
+        self.experiment_name = experiment_name or settings.mlflow_experiment_name
+        self.tracking_uri = settings.mlflow_tracking_uri
 
-        # Initialize the 4 target configurations
+        # MLflow setup
+        if HAS_MLFLOW:
+            try:
+                mlflow.set_tracking_uri(self.tracking_uri)
+                mlflow.set_experiment(self.experiment_name)
+            except Exception:
+                pass
+        self.local_tracker = LocalMLflowTracker(self.tracking_uri, self.experiment_name)
+
+        # 4 Standard Configurations to compare
         self.configurations: Dict[str, BaseAgent] = {
-            "1. Basic LLM (No tools)": BasicLLMWrapper(),
-            "2. Single ReAct Agent": ReActAgent(verbose=False),
-            "3. Agent with Memory": MemoryAugmentedAgent(verbose=False),
-            "4. Multi-Agent System": SupervisorAgent(verbose=False),
+            "1. Basic LLM (No tools)": BasicLLMAgent(llm_client=self.client),
+            "2. Single ReAct Agent": ReActAgent(llm_client=self.client, verbose=False),
+            "3. Agent with Memory": MemoryAugmentedAgent(llm_client=self.client, verbose=False),
+            "4. Multi-Agent (LangGraph)": MultiAgentOrchestrator(
+                supervisor=SupervisorAgent(llm_client=self.client, verbose=False),
+                verbose=False,
+            ),
         }
 
     def _load_test_cases(self) -> List[Dict[str, Any]]:
-        """Load benchmark dataset from JSON."""
         with open(self.test_cases_path, "r", encoding="utf-8") as f:
             return json.load(f)
 
@@ -136,7 +197,14 @@ class AgentEvaluator:
                 for tr in agent.logger.get_traces():
                     if tr.get("type") == "ACTION":
                         content = tr.get("content", "")
-                        for t_name in ["calculate", "search_papers", "get_paper_details", "save_preference", "get_preferences", "save_research_note"]:
+                        for t_name in [
+                            "calculate",
+                            "search_papers",
+                            "get_paper_details",
+                            "save_preference",
+                            "get_preferences",
+                            "save_research_note",
+                        ]:
                             if t_name in content:
                                 actual_tools.append(t_name)
                 steps = max(1, len(agent.logger.get_traces()))
@@ -169,14 +237,46 @@ class AgentEvaluator:
         return records
 
     def run_all(self) -> Dict[str, Any]:
-        """Execute evaluation across all 4 configurations and aggregate summary results."""
+        """Execute evaluation across all 4 configurations and track results in MLflow."""
         all_records: List[Dict[str, Any]] = []
+        settings = get_settings()
 
         for name, agent in self.configurations.items():
             records = self.evaluate_configuration(name, agent)
             all_records.extend(records)
 
-        # Aggregate metrics per configuration
+            # Compute summary metrics for this configuration
+            n = len(records) or 1
+            success_rate = sum(r["success"] for r in records) / n
+            avg_f1 = sum(r["f1"] for r in records) / n
+            avg_steps = sum(r["steps"] for r in records) / n
+            avg_latency = sum(r["latency_s"] for r in records) / n
+
+            params = {
+                "config_name": name,
+                "agent_type": agent.__class__.__name__,
+                "test_case_count": len(self.test_cases),
+                "llm_provider": settings.llm_provider,
+                "llm_model": settings.llm_model,
+            }
+            metrics = {
+                "task_success_rate": round(success_rate, 4),
+                "tool_selection_f1": round(avg_f1, 4),
+                "avg_steps": round(avg_steps, 2),
+                "avg_latency_seconds": round(avg_latency, 4),
+            }
+
+            # MLflow logging
+            if HAS_MLFLOW:
+                try:
+                    with mlflow.start_run(run_name=name):
+                        mlflow.log_params(params)
+                        mlflow.log_metrics(metrics)
+                except Exception:
+                    pass
+            self.local_tracker.log_run(name, params, metrics)
+
+        # Aggregate summary table
         summary: List[Dict[str, Any]] = []
         for name in self.configurations.keys():
             cfg_records = [r for r in all_records if r["config"] == name]

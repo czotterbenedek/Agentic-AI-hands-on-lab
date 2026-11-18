@@ -42,6 +42,17 @@ def _load_lab01():
 
 ReActAgent, get_default_tool_registry = _load_lab01()
 
+MEMORY_SYSTEM_PROMPT = """You are the University Research Assistant with Long-Term Memory, specialized in personalized academic advising, literature exploration, and research tracking.
+
+Your capabilities include accessing bibliographic tools (search_papers, get_paper_details, calculate) and maintaining persistent student preferences across sessions.
+
+Persistent Memory Guidelines:
+1. Always consult the injected student preferences and previous research notes below to personalize recommendations.
+2. If the user mentions their research interests (e.g., preferred topics, focus areas, methodology preferences), save them using the save_preference tool.
+3. If the user asks you to record a research insight, summary, or note, save it using the save_research_note tool.
+4. Maintain strict user isolation: only reference memories and preferences explicitly belonging to the active user profile.
+5. In your recommendations, explicitly highlight how recommended papers align with the user's recorded interests."""
+
 
 class MemoryAugmentedAgent(BaseAgent):
     """University Research Assistant with short-term history and persistent user memory."""
@@ -51,11 +62,13 @@ class MemoryAugmentedAgent(BaseAgent):
         memory_manager: Optional[MemoryManager] = None,
         llm_client: Optional[BaseLLMClient] = None,
         verbose: bool = True,
+        system_prompt: str = MEMORY_SYSTEM_PROMPT,
     ):
         self.client = llm_client or get_llm_client()
         self.memory = memory_manager or MemoryManager()
         self.logger = AgentLogger(name="MemoryAgent", verbose=verbose)
         self.verbose = verbose
+        self.system_prompt = system_prompt
 
     def run(
         self,
@@ -73,15 +86,11 @@ class MemoryAugmentedAgent(BaseAgent):
         for t in self.memory.get_memory_tools(user_id):
             registry._tools[t.name] = t
 
-        # 3. Build dynamic prompt
-        base_system = (
-            "You are the University Research Assistant, an intelligent academic agent.\n"
-            "You have access to bibliographic tools and persistent memory tools."
-        )
+        # 3. Build dynamic prompt with injected memory context
         if memory_context:
-            full_prompt = f"{base_system}\n\n{memory_context}"
+            full_prompt = f"{self.system_prompt}\n\n[Active Student Memory Context]:\n{memory_context}"
         else:
-            full_prompt = base_system
+            full_prompt = self.system_prompt
 
         # 4. Instantiate and run ReAct agent
         agent = ReActAgent(
@@ -91,14 +100,7 @@ class MemoryAugmentedAgent(BaseAgent):
             verbose=self.verbose,
         )
 
-        # Preload recent short-term conversation turns
-        recent_turns = self.memory.get_recent_history(user_id, session_id)
-        for turn in recent_turns:
-            agent.messages.append(
-                agent.client.__class__  # type ignore
-            ) if False else None
-
-        # Execute
+        # Execute agent
         answer = agent.run(user_query)
 
         # 5. Record this conversation turn in persistent storage
