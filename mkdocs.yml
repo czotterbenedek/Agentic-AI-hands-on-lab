@@ -1,0 +1,69 @@
+site_name: Agentic AI Hands-on Lab
+site_description: Practical MSc hands-on laboratory course on building, understanding, evaluating, and debugging Agentic AI systems.
+site_author: BME MSc - AI In Practice
+site_url: https://github.com/Agentic-AI-hands-on-lab
+
+repo_name: Agentic-AI-hands-on-lab
+repo_url: https://github.com/Agentic-AI-hands-on-lab
+
+theme:
+  name: material
+  language: en
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - toc.follow
+    - content.code.copy
+    - content.code.annotate
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.keys
+  - pymdownx.mark
+  - tables
+  - attr_list
+  - md_in_html
+  - def_list
+
+nav:
+  - Home: index.md
+  - "Lab 1: Tool Calling & ReAct": 01-tool-calling.md
+  - "Lab 2: Model Context Protocol (MCP)": 02-mcp.md
+  - "Lab 3: Agent Memory & Personalization": 03-memory.md
+  - "Lab 4: Multi-Agent Systems & LangGraph": 04-multi-agent.md
+  - "Lab 5: Evaluation & MLflow": 05-evaluation.md
