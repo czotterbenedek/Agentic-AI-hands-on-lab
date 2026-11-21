@@ -38,7 +38,12 @@ sequenceDiagram
 ### The ReAct Paradigm (Reason + Act)
 Formulated by [Yao et al. (2022)](https://arxiv.org/abs/2210.03629), the ReAct framework interleaves reasoning ("Thought"), action dispatching ("Action"), and environmental feedback ("Observation"):
 
-$$\text{User Query} \longrightarrow \underbrace{\text{Thought}}_{\text{Model Reasoning}} \longrightarrow \underbrace{\text{Action}}_{\text{Tool Call}} \longrightarrow \underbrace{\text{Observation}}_{\text{Tool Output}} \longrightarrow \dots \longrightarrow \text{Final Answer}$$
+```text
+User Query ──> [Thought] (Model Reasoning)
+           ──> [Action] (Tool Call)
+           ──> [Observation] (Tool Output)
+           ──> ... ──> Final Answer
+```
 
 - **Thought**: Allows the model to maintain state, plan sub-goals, and critique previous outputs.
 - **Action**: Interacts with external APIs or deterministic computational tools.
@@ -109,7 +114,7 @@ Researchers need comparative bibliometrics. Implement a tool that computes key c
    - `average_citations`: Mean citation count rounded to 1 decimal place.
    - `max_citations`: Highest citation count.
    - `min_citations`: Lowest citation count.
-   - `h_index`: Number $h$ such that $h$ papers have at least $h$ citations each.
+   - `h_index`: Number *h* such that *h* papers have at least *h* citations each.
 4. Return the computed statistics as an indented JSON string (`indent=2`).
 
 ---

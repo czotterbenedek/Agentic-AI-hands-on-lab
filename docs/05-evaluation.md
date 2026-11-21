@@ -102,7 +102,7 @@ Quantify how accurately the agent selected tools compared to ground truth:
    - Both sets empty: `precision=1.0, recall=1.0, f1=1.0`.
    - `actual` empty, `expected` non-empty: `precision=0.0, recall=0.0, f1=0.0`.
    - `expected` empty, `actual` non-empty: `precision=0.0, recall=1.0, f1=0.0`.
-3. Calculate True Positives: $\text{TP} = |\text{expected} \cap \text{actual}|$.
+3. Calculate True Positives: $\text{TP} = |\text{expected} \cap \text{actual}|$ (number of common tools: `len(expected_set & actual_set)`).
 4. Calculate Precision, Recall, and F1.
 5. Return a dictionary with values rounded to 4 decimal places:
    ```python

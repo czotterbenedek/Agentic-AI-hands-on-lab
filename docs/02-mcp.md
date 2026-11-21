@@ -6,12 +6,12 @@ In this laboratory, you will expose bibliographic capabilities through the **Mod
 
 ## 1. General Knowledge & Theoretical Background
 
-### The $M \times N$ Integration Dilemma
-Historically, every AI framework (LangChain, LlamaIndex, AutoGen, custom agents) implemented its own tool format. If you had $M$ agent frameworks and $N$ enterprise data sources (GitHub, PostgreSQL, Slack, academic databases), the community had to write $M \times N$ custom plugins.
+### The M × N Integration Dilemma
+Historically, every AI framework (LangChain, LlamaIndex, AutoGen, custom agents) implemented its own tool format. If you had *M* agent frameworks and *N* enterprise data sources (GitHub, PostgreSQL, Slack, academic databases), the community had to write *M* × *N* custom plugins.
 
 ```mermaid
 graph TD
-    subgraph Fragmented["Legacy Custom Integrations (M x N)"]
+    subgraph Fragmented["Legacy Custom Integrations (M × N)"]
         A1[Agent A] --> D1[Postgres Plugin A]
         A1 --> D2[GitHub Plugin A]
         A2[Agent B] --> D3[Postgres Plugin B]
