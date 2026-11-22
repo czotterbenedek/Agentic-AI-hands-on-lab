@@ -40,6 +40,19 @@ def test_solution_05_evaluation():
     run_solution_test("05-evaluation")
 
 
+def test_failure_museum():
+    test_path = Path(__file__).resolve().parent / "test_failure_museum.py"
+    assert test_path.exists(), f"Test file not found: {test_path}"
+    res = subprocess.run(
+        [sys.executable, str(test_path)],
+        capture_output=True,
+        text=True,
+    )
+    if res.returncode != 0:
+        print(f"FAILED test_failure_museum:\n{res.stdout}\n{res.stderr}")
+    assert res.returncode == 0, "Failure Museum regression tests failed"
+
+
 if __name__ == "__main__":
     tests = [
         test_solution_01_tool_calling,
@@ -47,6 +60,7 @@ if __name__ == "__main__":
         test_solution_03_memory,
         test_solution_04_multi_agent,
         test_solution_05_evaluation,
+        test_failure_museum,
     ]
     passed = 0
     for t in tests:

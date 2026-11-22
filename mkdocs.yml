@@ -1,10 +1,10 @@
 site_name: Agentic AI Hands-on Lab
 site_description: Practical MSc hands-on laboratory course on building, understanding, evaluating, and debugging Agentic AI systems.
 site_author: BME MSc - AI In Practice
-site_url: https://github.com/Agentic-AI-hands-on-lab
+site_url: https://czotterbenedek.github.io/Agentic-AI-hands-on-lab/
 
-repo_name: Agentic-AI-hands-on-lab
-repo_url: https://github.com/Agentic-AI-hands-on-lab
+repo_name: czotterbenedek/Agentic-AI-hands-on-lab
+repo_url: https://github.com/czotterbenedek/Agentic-AI-hands-on-lab
 
 theme:
   name: material
@@ -73,3 +73,4 @@ nav:
   - "Lab 3: Agent Memory & Personalization": 03-memory.md
   - "Lab 4: Multi-Agent Systems & LangGraph": 04-multi-agent.md
   - "Lab 5: Evaluation & MLflow": 05-evaluation.md
+  - "Failure Museum": failure-museum.md

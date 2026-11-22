@@ -42,6 +42,7 @@ graph LR
 | [**Lab 3**](03-memory.md) | **Agent Memory & Personalization** | SQLite, Dynamic Context Injection | Short-term conversation history, user isolation, long-term preferences, memory self-tools |
 | [**Lab 4**](04-multi-agent.md) | **Multi-Agent Systems & LangGraph** | LangGraph StateGraph, Specialized Prompts | Supervisor-Specialist hierarchy, conditional routing, cyclic delegation detection, shared state |
 | [**Lab 5**](05-evaluation.md) | **Agent Evaluation & MLflow** | MLflow, Deterministic Evals, Pandas | Multi-agent benchmarking, Precision/Recall/F1 for tools, latency/token efficiency, MLflow tracking |
+| [**Failure Museum**](failure-museum.md) | **Agent Failure Museum** | Guardrails, Cycle Detection, Error Handling | 6 real-world failure scenarios: infinite loops, hallucinations, bad args, MCP drops, leaks, ping-pong |
 
 ---
 
