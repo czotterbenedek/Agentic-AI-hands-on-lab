@@ -13,7 +13,7 @@ This document examines **six classic agent failure scenarios**. For each failure
 6. **Runnable Example**
 7. **Regression Test**
 
-All regression tests are implemented in [`tests/test_failure_museum.py`](file:///Users/ASUS/Documents/egyetem/Agentic-AI-hands-on-lab/tests/test_failure_museum.py) and can be run with `python3 tests/test_failure_museum.py`.
+All regression tests are implemented in [`tests/test_failure_museum.py`](https://github.com/czotterbenedek/Agentic-AI-hands-on-lab/blob/main/tests/test_failure_museum.py) and can be run with `python3 tests/test_failure_museum.py`.
 
 ---
 
@@ -85,10 +85,14 @@ return fallback_msg
 
 ### 6. Runnable Example
 ```python
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path("solutions/01-tool-calling").resolve()))
+
 from shared.agent import AgentResponse, Tool, ToolCall
 from shared.llm_client import BaseLLMClient
-from solutions["01-tool-calling"].react_agent import ReActAgent
-from solutions["01-tool-calling"].tools import ToolRegistry
+from react_agent import ReActAgent
+from tools import ToolRegistry
 
 
 class InfiniteCallingLLM(BaseLLMClient):
@@ -124,7 +128,7 @@ print("Agent terminated with:", result)
 ```
 
 ### 7. Regression Test
-See `TestFailure1InfiniteLoop` in [`tests/test_failure_museum.py`](file:///Users/ASUS/Documents/egyetem/Agentic-AI-hands-on-lab/tests/test_failure_museum.py).
+See `TestFailure1InfiniteLoop` in [`tests/test_failure_museum.py`](https://github.com/czotterbenedek/Agentic-AI-hands-on-lab/blob/main/tests/test_failure_museum.py).
 
 ---
 
@@ -175,9 +179,13 @@ if not tool:
 
 ### 6. Runnable Example
 ```python
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path("solutions/01-tool-calling").resolve()))
+
 from shared.agent import ToolCall
-from solutions["01-tool-calling"].react_agent import ReActAgent
-from solutions["01-tool-calling"].tools import ToolRegistry
+from react_agent import ReActAgent
+from tools import ToolRegistry
 
 registry = ToolRegistry()
 agent = ReActAgent(tool_registry=registry, verbose=False)
@@ -191,7 +199,7 @@ print("Observation fed back to LLM:", observation)
 ```
 
 ### 7. Regression Test
-See `TestFailure2HallucinatedTool` in [`tests/test_failure_museum.py`](file:///Users/ASUS/Documents/egyetem/Agentic-AI-hands-on-lab/tests/test_failure_museum.py).
+See `TestFailure2HallucinatedTool` in [`tests/test_failure_museum.py`](https://github.com/czotterbenedek/Agentic-AI-hands-on-lab/blob/main/tests/test_failure_museum.py).
 
 ---
 
@@ -224,7 +232,7 @@ Or it invokes arithmetic with an illegal expression: `calculate(expression="10 /
 ### 5. The Fix
 Three-layer defense:
 1. **JSON Parser Guard:** In `_execute_tool_call`, safely parse stringified arguments in a `try/except Exception` block, returning a clean error observation if parsing fails.
-2. **Safe AST Evaluation:** In `calculate()`, use Python's Abstract Syntax Tree (`ast.parse`) module in `mode='eval'`. Whitelist only numerical constants (`ast.Constant`), unary operations (`ast.UnaryOp`), and safe binary operations (`ast.BinOp`).
+2. **Safe AST Evaluation:** In `calculate()`, use Python's Abstract Syntax Tree (`ast.parse`) module in `mode='eval'`. Whitelist numerical constants (`ast.Constant`), unary operations (`ast.UnaryOp`), safe binary operations (`ast.BinOp`, including floor division), and safe math functions via `ast.Call` (`sqrt`, `log`, `pow`, `abs`). Reject all other nodes, built-ins, and arbitrary function calls.
 3. **Explicit Exception Handling:** Catch `ZeroDivisionError` explicitly and return `"Error: Division by zero"`.
 
 ```python
@@ -251,19 +259,23 @@ def _eval_node(n):
 
 ### 6. Runnable Example
 ```python
-from solutions["01-tool-calling"].tools import calculate
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path("solutions/01-tool-calling").resolve()))
+
+from tools import calculate
 
 # Division by zero
 print(calculate("10 / 0"))
-# Output: Error evaluating expression '10 / 0': division by zero
+# Output: Error: Division by zero
 
 # Remote Code Execution attempt
 print(calculate("__import__('os').system('echo hacked')"))
-# Output: Error evaluating expression: Unexpected node type: Call
+# Output: Error evaluating expression '__import__('os').system('echo hacked')': Forbidden function call in arithmetic expression
 ```
 
 ### 7. Regression Test
-See `TestFailure3IncorrectArguments` in [`tests/test_failure_museum.py`](file:///Users/ASUS/Documents/egyetem/Agentic-AI-hands-on-lab/tests/test_failure_museum.py).
+See `TestFailure3IncorrectArguments` in [`tests/test_failure_museum.py`](https://github.com/czotterbenedek/Agentic-AI-hands-on-lab/blob/main/tests/test_failure_museum.py).
 
 ---
 
@@ -313,7 +325,11 @@ except Exception as e:
 
 ### 6. Runnable Example
 ```python
-from solutions["02-mcp"].client import MCPClient
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path("solutions/02-mcp").resolve()))
+
+from client import MCPClient
 
 client = MCPClient(server_path="/invalid/path/server.py")
 try:
@@ -324,7 +340,7 @@ except ConnectionError as e:
 ```
 
 ### 7. Regression Test
-See `TestFailure4MCPConnectionFailure` in [`tests/test_failure_museum.py`](file:///Users/ASUS/Documents/egyetem/Agentic-AI-hands-on-lab/tests/test_failure_museum.py).
+See `TestFailure4MCPConnectionFailure` in [`tests/test_failure_museum.py`](https://github.com/czotterbenedek/Agentic-AI-hands-on-lab/blob/main/tests/test_failure_museum.py).
 
 ---
 
@@ -372,7 +388,11 @@ def get_preferences(self, user_id: str) -> Dict[str, str]:
 
 ### 6. Runnable Example
 ```python
-from solutions["03-memory"].storage import SQLiteMemoryStorage
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path("solutions/03-memory").resolve()))
+
+from storage import SQLiteMemoryStorage
 
 storage = SQLiteMemoryStorage(db_path=":memory:")
 storage.save_preference("alice", "interest", "Quantum Computing")
@@ -384,7 +404,7 @@ print("Bob's preferences:", bob_prefs)
 ```
 
 ### 7. Regression Test
-See `TestFailure5MemoryContamination` in [`tests/test_failure_museum.py`](file:///Users/ASUS/Documents/egyetem/Agentic-AI-hands-on-lab/tests/test_failure_museum.py).
+See `TestFailure5MemoryContamination` in [`tests/test_failure_museum.py`](https://github.com/czotterbenedek/Agentic-AI-hands-on-lab/blob/main/tests/test_failure_museum.py).
 
 ---
 
@@ -441,7 +461,11 @@ def detect_cycle(self, history: List[Any]) -> bool:
 
 ### 6. Runnable Example
 ```python
-from solutions["04-multi-agent"].orchestrator import MultiAgentOrchestrator
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path("solutions/04-multi-agent").resolve()))
+
+from orchestrator import MultiAgentOrchestrator
 
 orchestrator = MultiAgentOrchestrator()
 
@@ -459,7 +483,7 @@ print("Cycle detected?", is_cycle)
 ```
 
 ### 7. Regression Test
-See `TestFailure6MultiAgentDelegationLoop` in [`tests/test_failure_museum.py`](file:///Users/ASUS/Documents/egyetem/Agentic-AI-hands-on-lab/tests/test_failure_museum.py).
+See `TestFailure6MultiAgentDelegationLoop` in [`tests/test_failure_museum.py`](https://github.com/czotterbenedek/Agentic-AI-hands-on-lab/blob/main/tests/test_failure_museum.py).
 
 ---
 

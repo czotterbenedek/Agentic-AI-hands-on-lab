@@ -77,7 +77,14 @@ RESEARCH_DATASET: List[Dict[str, Any]] = [
 
 
 def search_crossref_api(query: str, limit: int = 3) -> Optional[List[Dict[str, Any]]]:
-    """Attempt to query Crossref public API; gracefully returns None on network error or offline mode."""
+    """Attempt to query Crossref public API if enabled.
+
+    By default, returns None to ensure deterministic, reproducible offline execution
+    using the curated local dataset. Set environment variable USE_CROSSREF_API=1 to enable live network calls.
+    """
+    import os
+    if os.environ.get("USE_CROSSREF_API", "0").lower() not in ("1", "true", "yes"):
+        return None
     url = f"https://api.crossref.org/works?query={urllib.parse.quote(query)}&rows={limit}"
     headers = {"User-Agent": "BME-AgenticAI-Lab/1.0 (mailto:lab@university.edu)"}
     try:

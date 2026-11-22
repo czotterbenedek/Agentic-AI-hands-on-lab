@@ -221,6 +221,17 @@ class AgentEvaluator:
                 actual_tools=actual_tools,
             )
 
+            # Tool execution success rate from observation traces
+            observations = []
+            if hasattr(agent, "logger"):
+                for tr in agent.logger.get_traces():
+                    if tr.get("type") == "OBSERVATION":
+                        observations.append(tr.get("content", ""))
+            tool_exec_success = compute_tool_execution_success(observations)
+
+            # Efficiency metrics
+            eff = compute_efficiency(step_count=steps, latency_seconds=latency)
+
             record = {
                 "config": config_name,
                 "test_id": tc["id"],
@@ -229,8 +240,10 @@ class AgentEvaluator:
                 "precision": tool_acc["precision"],
                 "recall": tool_acc["recall"],
                 "f1": tool_acc["f1"],
+                "tool_execution_success": tool_exec_success,
                 "steps": steps,
                 "latency_s": round(latency, 3),
+                "token_estimate": eff["token_estimate"],
             }
             records.append(record)
 
@@ -299,7 +312,7 @@ class AgentEvaluator:
             "detailed_records": all_records,
         }
 
-    def export_results(self, results: Dict[str, Any], output_prefix: str = "evaluation_results") -> None:
+    def export_results(self, results: Dict[str, Any], output_prefix: str = "evaluation_benchmark") -> None:
         """Export evaluation results to CSV and JSON."""
         json_path = f"{output_prefix}.json"
         csv_path = f"{output_prefix}.csv"

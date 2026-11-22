@@ -85,13 +85,13 @@ class MemoryAugmentedAgent(BaseAgent):
         # Combine persistent memory with the ReAct execution loop:
         #
         # 1. Retrieve persistent memory context string: `self.memory.get_system_context(user_id)`.
+        #    Retrieve recent conversation turns: `self.memory.get_recent_history(user_id, session_id)`.
         # 2. Obtain base tool registry: `registry = get_default_tool_registry()`.
         # 3. Register user memory tools: iterate `self.memory.get_memory_tools(user_id)`
         #    and add each to `registry._tools[t.name] = t`.
         # 4. Construct prompt:
-        #    If `memory_context` is non-empty, append it to `self.system_prompt`:
-        #    `full_prompt = f"{self.system_prompt}\\n\\n[Active Student Memory Context]:\\n{memory_context}"`
-        #    Else `full_prompt = self.system_prompt`.
+        #    Append `memory_context` (if non-empty) and formatted `recent_history` (if non-empty)
+        #    to `self.system_prompt`.
         # 5. Instantiate ReActAgent with the updated registry and system_prompt.
         # 6. Execute agent: `answer = agent.run(user_query)`.
         # 7. Record the turn in storage:

@@ -92,12 +92,13 @@ stateDiagram-v2
 **Tag:** `# TODO [Lab 4.1]` (~35 lines)
 
 The Research Specialist searches for papers and retrieves metadata:
-1. Search papers matching `task.description` using the pre-registered research tools.
-2. If papers are found:
-   - Extract paper details (ID, title, authors, year, citations, abstract).
-   - Format a structured findings summary string.
-3. If no papers are found, formulate an informative fallback message.
-4. Store findings in `context.research_findings[task.id]` and return the findings string.
+1. Log task start: `self.logger.log("TASK_START", ...)`.
+2. Extract `query` and `limit` from `handoff.context_payload` (or `handoff.task_description`).
+3. Call `search_papers(query=query, limit=limit)` to find candidate papers.
+4. Enhance each paper with full metadata using `get_paper_details(paper_id)`.
+5. Crucial: Write the retrieved detailed papers to the shared blackboard:
+   `context.retrieved_papers = detailed_papers`.
+6. Return a summary dictionary containing `status`, `papers_found`, `titles`, and `top_paper_id`.
 
 ---
 
@@ -106,10 +107,13 @@ The Research Specialist searches for papers and retrieves metadata:
 **Tag:** `# TODO [Lab 4.2]` (~40 lines)
 
 The Analysis Specialist analyzes retrieved literature:
-1. Gather all raw literature from `context.research_findings`.
-2. Extract common methodologies, key theoretical contributions, and publication trends.
-3. Calculate citation aggregates across the papers.
-4. Format an analytical critique and store the result in `context.analysis_results[task.id]`.
+1. Gather the literature from the shared context: `papers = context.retrieved_papers`.
+2. Compute citation statistics across the papers using `compute_citation_stats()`.
+3. Construct a structured comparative methodology matrix across the papers.
+4. Optionally compute citation ratios using the calculation tool.
+5. Store the structured analysis in the shared blackboard:
+   `context.analysis_artifacts = analysis_result`.
+6. Return `analysis_result`.
 
 ---
 
@@ -117,18 +121,22 @@ The Analysis Specialist analyzes retrieved literature:
 **File:** `labs/04-multi-agent/supervisor.py` — `plan_and_delegate()`  
 **Tag:** `# TODO [Lab 4.3]` (~45 lines)
 
-The Supervisor inspects the current state and decides the next step:
-1. If no research has been conducted (`not context.research_findings`):
-   - Create a research `TaskAssignment` targeting the `"researcher"`.
-   - Record the delegation in `context.delegation_history`.
-   - Return `"researcher"`.
-2. If research is complete but analysis is missing (`not context.analysis_results`):
-   - Create an analysis `TaskAssignment` targeting the `"analyst"`.
-   - Record the delegation in `context.delegation_history`.
-   - Return `"analyst"`.
-3. If both research and analysis are complete:
-   - Call `self.synthesize_report(context)` to populate `context.final_synthesis`.
-   - Return `"finish"`.
+The Supervisor implements multi-agent delegation with guardrails:
+1. Guardrail check: if `len(context.delegation_history) >= self.max_delegation_depth`, log an error and return `context` immediately (prevents infinite delegation loops!).
+2. Step 1 (Research Handoff):
+   - Create a `HandoffMessage` from supervisor to `"researcher"` with payload `{"query": user_query, "limit": 4}`.
+   - Log handoff and record it: `context.record_handoff(research_handoff)`.
+   - Execute: `self.researcher.execute_task(research_handoff, context)`.
+3. Step 2 (Analysis Handoff):
+   - Create a `HandoffMessage` from supervisor to `"analyst"` passing `context.retrieved_papers`.
+   - Log handoff and record in context.
+   - Execute: `self.analyst.execute_task(analysis_handoff, context)`.
+4. Step 3 (Report Synthesis):
+   - Synthesize the final academic report: `context.final_synthesis = self.synthesize_report(context)`.
+5. Return `context`.
+
+> [!NOTE]
+> In the LangGraph workflow (Tasks 4.4 and 4.5), conditional routing is handled dynamically by `node_function` and `route_supervisor_decision`, which inspect the presence of `retrieved_papers` and `analysis_artifacts` to route to `researcher`, `analyst`, or `finish`.
 
 ---
 

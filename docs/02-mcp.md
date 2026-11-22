@@ -27,10 +27,25 @@ graph TD
 
 ### What is the Model Context Protocol (MCP)?
 Open-sourced by Anthropic in late 2024, **MCP** is an open specification that standardizes how applications provide context and tools to LLMs.
+
+> [!NOTE]
+> **Implementation Note**: To keep exercises educational, transparent, and zero-dependency, this laboratory implements a lightweight, pure-Python JSON-RPC 2.0 server and client conforming to the official Model Context Protocol (version `2024-11-05`). This demystifies the protocol mechanics without the complexity of heavy asynchronous event loop frameworks.
+
 Key properties of MCP:
 1. **Decoupled Architecture**: Tools run in isolated server processes or remote microservices, separating tool execution security and environment dependencies from the agent runtime.
 2. **JSON-RPC 2.0 Foundation**: All messages conform to the standard JSON-RPC 2.0 specification over standard I/O (`stdio`), HTTP with Server-Sent Events (SSE), or WebSockets.
 3. **Dynamic Discovery**: The agent does not need compile-time knowledge of available tools. Upon connecting, it queries `tools/list` to introspect schemas at runtime.
+
+### Tools Exposed by the Research MCP Server
+The `ResearchMCPServer` exposes five specialized bibliographic tools:
+
+| Tool Name | Parameters | Description |
+| :--- | :--- | :--- |
+| `search_papers` | `query: str`, `max_results: int = 5` (`limit` alias supported) | Keyword and topic search across research papers |
+| `get_paper_details` | `paper_id: str` | Complete bibliographic metadata and abstract |
+| `get_recent_papers` | `topic: str`, `limit: int = 5` | Recent papers sorted by year and citation count |
+| `export_bibtex` | `paper_id: str` | Standard BibTeX citation string generation |
+| `get_author_papers` | `author_name: str` | All papers co-authored by a given researcher |
 
 ### JSON-RPC 2.0 Message Structure
 Every MCP message is a JSON string terminating in a newline (`\n`):

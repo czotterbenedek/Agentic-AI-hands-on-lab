@@ -93,29 +93,32 @@ Language models frequently produce arithmetic hallucinations. Your task is to im
 
 **Requirements:**
 1. Parse `expression` using Python's `ast` (Abstract Syntax Tree) module (`ast.parse(..., mode='eval')`).
-2. Recursively evaluate only safe nodes: `ast.Constant`, `ast.BinOp`, `ast.UnaryOp`.
-3. Support operators: addition (`+`), subtraction (`-`), multiplication (`*`), division (`/`), exponentiation (`**`), and modulo (`%`).
-4. Catch `ZeroDivisionError` and return `"Error: Division by zero"`.
-5. Return the result formatted as a string (round floats to 4 decimal places).
+2. Recursively evaluate safe AST nodes: `ast.Constant` (numeric values), `ast.BinOp` (binary operations), `ast.UnaryOp` (unary operations), and `ast.Call` for whitelisted math functions.
+3. Support operators: addition (`+`), subtraction (`-`), multiplication (`*`), division (`/`), floor division (`//`), exponentiation (`**`), and modulo (`%`).
+4. Support standard math functions: `sqrt`, `log`, `pow`, and `abs` (reject any unwhitelisted function calls or built-ins).
+5. Catch `ZeroDivisionError` and return `"Error: Division by zero"`.
+6. Return the result formatted as a string (round floats to 4 decimal places).
 
 ---
 
 ### Task 1.2: Multi-Paper Citation Statistics Tool
-**File:** `labs/01-tool-calling/tools.py` — `compute_citation_stats(paper_ids: List[str]) -> str`  
+**File:** `labs/01-tool-calling/tools.py` — `compute_citation_stats(paper_ids: List[str]) -> Dict[str, Any]`  
 **Tag:** `# TODO [Lab 1.2]` (~30 lines)
 
 Researchers need comparative bibliometrics. Implement a tool that computes key citation statistics for a list of paper IDs.
 
 **Requirements:**
-1. For each `paper_id` in `paper_ids`, locate the paper in `RESEARCH_DATASET`.
-2. Collect citation counts. If no valid papers are found, return `json.dumps({"error": "No valid papers found"})`.
-3. Compute:
-   - `total_citations`: Sum of citations.
-   - `average_citations`: Mean citation count rounded to 1 decimal place.
+1. For each `paper_id` in `paper_ids`, locate the paper details using `get_paper_details(pid)`.
+2. Extract `citations` and `title` for each found paper.
+3. If no valid papers are found, return `{"error": "No valid papers found with given IDs."}`.
+4. Compute:
+   - `paper_count`: Total number of valid papers found.
+   - `total_citations`: Sum of citations across found papers.
+   - `average_citations`: Mean citation count rounded to 2 decimal places.
    - `max_citations`: Highest citation count.
    - `min_citations`: Lowest citation count.
-   - `h_index`: Number *h* such that *h* papers have at least *h* citations each.
-4. Return the computed statistics as an indented JSON string (`indent=2`).
+   - `papers`: List of found paper titles.
+5. Return the computed statistics as a dictionary matching the schema.
 
 ---
 

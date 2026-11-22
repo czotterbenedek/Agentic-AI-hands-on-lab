@@ -190,24 +190,23 @@ python3 labs/05-evaluation/run_lab.py
 ```
 
 ### Reviewing the Benchmark Results
-After running, inspect the generated summary tables and exported files:
-- `evaluation_benchmark.csv`
-- `evaluation_benchmark.json`
+After running, inspect the generated summary tables and exported files (`evaluation_benchmark.csv` and `evaluation_benchmark.json`).
 
-Notice the clear progression:
+Summary benchmark results with the default evaluation suite:
 
 ```text
 ================================================================================
                     AGENTIC EVALUATION BENCHMARK SUMMARY
 ================================================================================
-Configuration        Success Rate    Tool F1    Avg Steps    Avg Latency (s)
+Configuration                  Success Rate    Tool F1    Avg Steps    Avg Latency (s)
 --------------------------------------------------------------------------------
-1_raw_llm                  30.0%       0.00         1.0             0.012
-2_single_agent             75.0%       0.82         2.4             0.045
-3_memory_agent             90.0%       0.88         2.6             0.052
-4_multi_agent              95.0%       0.94         4.1             0.098
+1. Basic LLM (No tools)               25.0%      0.050          1.0             0.000
+2. Single ReAct Agent                 55.0%      0.667          4.5             0.000
+3. Agent with Memory                  60.0%      0.050          1.0             0.001
+4. Multi-Agent (LangGraph)            65.0%      0.050          2.1             0.000
 ================================================================================
 ```
+*(Note: Numbers represent offline MockLLM evaluation; running with live frontier models like GPT-4o will yield higher absolute accuracy while exhibiting the same relative progression across architectures).*
 
 ### Automated Unit Tests
 ```bash

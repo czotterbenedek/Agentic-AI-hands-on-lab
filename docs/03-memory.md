@@ -175,9 +175,9 @@ Fetch the last `max_history_turns * 2` messages and return them formatted as a l
 
 #### 3.4c: `run(...)` (`memory_agent.py`)
 **Tag:** `# TODO [Lab 3.4]` (~35 lines)
-1. Retrieve `memory_context = self.memory.get_system_context(user_id)`.
+1. Retrieve `memory_context = self.memory.get_system_context(user_id)` and recent history `recent_history = self.memory.get_recent_history(user_id, session_id)`.
 2. Construct the tool registry, augmenting it with memory tools (`self.memory.get_memory_tools(user_id)`).
-3. Append `memory_context` to `self.system_prompt` if present.
+3. Append `memory_context` and formatted `recent_history` (if present) to `self.system_prompt`.
 4. Instantiate `ReActAgent` and run the user query.
 5. Record the conversation turn in storage via `self.memory.record_turn(...)`.
 

@@ -1,5 +1,6 @@
 """Tool definitions, schema generation, and registry for Module 1 (Starter Lab)."""
 
+import ast
 import inspect
 import json
 import math
@@ -185,14 +186,17 @@ def calculate(expression: str) -> str:
     # TODO [Lab 1.1]: Safe Calculation Tool (~30 lines)
     # ------------------------------------------------------------------------------
     # Security is critical when executing LLM-generated code or math:
-    # 1. Clean and strip the input expression.
-    # 2. Prevent arbitrary code execution: disallow access to python builtins
-    #    (`__import__`, `eval`, `exec`, `open`, etc.) or non-math identifiers.
-    #    Allow basic math functions if desired (e.g. sqrt, log, pow, abs).
-    # 3. Evaluate the arithmetic safely using `eval()` with `__builtins__: {}` and a
-    #    restricted set of mathematical functions.
-    # 4. Return the result as a string, rounded to 4 decimal places if float.
-    # 5. Catch and return any evaluation errors as clear error strings instead of crashing.
+    # 1. Clean and strip the input expression. Empty string returns "Error: Empty expression".
+    # 2. Prevent arbitrary code execution: NEVER use eval() or exec().
+    #    Instead, parse the expression into an AST with ast.parse(expression, mode="eval").
+    # 3. Recursively evaluate safe AST nodes only:
+    #    - ast.Constant: numeric values (int, float)
+    #    - ast.BinOp: +, -, *, /, //, %, **
+    #    - ast.UnaryOp: +x, -x
+    #    - ast.Call: whitelisted math functions (sqrt, log, pow, abs)
+    # 4. Handle division by zero (including // and %) and return "Error: Division by zero".
+    # 5. Return the result as a string, rounded to 4 decimal places if float.
+    # 6. Catch syntax and evaluation errors and return clear error messages.
     # ==============================================================================
     """
     raise NotImplementedError("TODO [Lab 1.1]: Implement safe calculate tool")

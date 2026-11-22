@@ -126,10 +126,7 @@ class TestFailure3IncorrectArguments(unittest.TestCase):
     def test_safe_calculator_handles_division_by_zero(self):
         """Verifies calculator catches zero-division without raising uncaught exception."""
         result = calculate("10 / 0")
-        self.assertTrue(
-            "division by zero" in result.lower() or "error" in result.lower(),
-            f"Expected zero-division error message, got: {result}",
-        )
+        self.assertEqual(result, "Error: Division by zero")
 
     def test_safe_calculator_rejects_unsafe_expressions(self):
         """Verifies calculator rejects arbitrary code execution attempts."""

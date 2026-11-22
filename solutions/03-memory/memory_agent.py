@@ -78,17 +78,25 @@ class MemoryAugmentedAgent(BaseAgent):
         **kwargs: Any,
     ) -> str:
         """Run agent on user query with persistent context injection and turn recording."""
-        # 1. Retrieve persistent memory context (preferences and notes)
+        # 1. Retrieve persistent memory context (preferences and notes) and conversation history
         memory_context = self.memory.get_system_context(user_id)
+        recent_history = self.memory.get_recent_history(user_id, session_id)
 
         # 2. Prepare tool registry with research tools + memory tools
         registry = get_default_tool_registry()
         for t in self.memory.get_memory_tools(user_id):
             registry._tools[t.name] = t
 
-        # 3. Build dynamic prompt with injected memory context
+        # 3. Build dynamic prompt with injected memory context and conversation history
+        context_blocks = []
         if memory_context:
-            full_prompt = f"{self.system_prompt}\n\n[Active Student Memory Context]:\n{memory_context}"
+            context_blocks.append(f"[Active Student Memory Context]:\n{memory_context}")
+        if recent_history:
+            history_lines = [f"  {m['role'].capitalize()}: {m['content']}" for m in recent_history]
+            context_blocks.append("[Recent Conversation History]:\n" + "\n".join(history_lines))
+
+        if context_blocks:
+            full_prompt = f"{self.system_prompt}\n\n" + "\n\n".join(context_blocks)
         else:
             full_prompt = self.system_prompt
 

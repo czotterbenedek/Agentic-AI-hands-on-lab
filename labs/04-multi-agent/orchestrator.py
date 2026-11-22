@@ -100,6 +100,16 @@ except ImportError:
 
 def route_supervisor_decision(state: AgentState) -> str:
     """Conditional routing function determining the next step from supervisor state."""
+    # Active cycle detection during graph routing
+    history = state.get("delegation_history", [])
+    if len(history) >= 4:
+        hops = []
+        for h in history:
+            if isinstance(h, dict):
+                hops.append((h.get("source"), h.get("target")))
+        if len(hops) >= 4 and hops[-1] == hops[-3] and hops[-2] == hops[-4]:
+            return "finish"
+
     next_step = state.get("next_step", "finish")
     if next_step == "researcher":
         return "researcher"

@@ -70,7 +70,7 @@ To ensure lasting foundational knowledge, this lab is built on modern industry s
 ### 2. Clone Repository & Setup Virtual Environment
 ```bash
 # Clone the repository
-git clone https://github.com/Agentic-AI-hands-on-lab.git
+git clone https://github.com/czotterbenedek/Agentic-AI-hands-on-lab.git
 cd agentic-ai-hands-on-lab
 
 # Create and activate a virtual environment
@@ -108,14 +108,15 @@ The project is structured into clear, mirror-matched directories:
 
 ```text
 agentic-ai-hands-on-lab/
-├── docs/                      # Lab guides and documentation (MkDocs)
+├── docs/                      # Lab guides, documentation, and Failure Museum (MkDocs)
 │   ├── index.md
 │   ├── 01-tool-calling.md
 │   ├── 02-mcp.md
 │   ├── 03-memory.md
 │   ├── 04-multi-agent.md
-│   └── 05-evaluation.md
-├── labs/                      # Starter code for students (contains guided TODOs)
+│   ├── 05-evaluation.md
+│   └── failure-museum.md
+├── labs/                      # Starter code for students (contains guided # TODO tags)
 │   ├── 01-tool-calling/
 │   ├── 02-mcp/
 │   ├── 03-memory/
@@ -132,7 +133,11 @@ agentic-ai-hands-on-lab/
 │   ├── agent.py
 │   ├── config.py
 │   └── logging.py
-├── tests/                     # Verification test suites
+├── mcp_server/                # Standalone entrypoint shim for Research MCP Server
+├── memory/                    # Standalone entrypoint shim for SQLite Memory Storage
+├── multi_agent/               # Standalone entrypoint shim for Multi-Agent Supervisor
+├── evaluation/                # Standalone entrypoint shim for Benchmark Evaluator
+├── tests/                     # Unit test suites & Failure Museum regression tests
 ├── requirements.txt           # Python package requirements
 └── mkdocs.yml                 # Documentation site configuration
 ```

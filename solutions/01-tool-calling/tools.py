@@ -1,5 +1,6 @@
 """Tool definitions, schema generation, and registry for Module 1."""
 
+import ast
 import inspect
 import json
 import math
@@ -173,29 +174,77 @@ class ToolRegistry:
 # ------------------------------------------------------------------------------
 
 def calculate(expression: str) -> str:
-    """Safely evaluate a mathematical arithmetic expression.
+    """Safely evaluate a mathematical arithmetic expression using AST evaluation.
 
     :param expression: Mathematical expression string, e.g. '125000 / 7' or '18500 + 12000'
     """
-    # Allowed tokens: numbers, operators (+, -, *, /, //, %, **), parentheses, and math functions
     cleaned = expression.strip()
-    # Security guard: disallow any dangerous built-ins or variable lookups
-    if re.search(r"[a-zA-Z_]", cleaned):
-        # Allow safe math module functions only
-        allowed_names = {"sqrt": math.sqrt, "log": math.log, "pow": math.pow, "abs": abs}
-        # Check if the text matches simple allowed function calls
-        for fn in allowed_names:
-            cleaned = cleaned.replace(fn, "")
-        if re.search(r"[a-zA-Z_]", cleaned):
-            return "Error: Expression contains forbidden non-mathematical identifiers."
+    if not cleaned:
+        return "Error: Empty expression"
 
-    allowed_locals = {"sqrt": math.sqrt, "log": math.log, "pow": math.pow, "abs": abs}
     try:
-        # Compile in eval mode with no globals and restricted locals
-        result = eval(expression, {"__builtins__": {}}, allowed_locals)
-        if isinstance(result, float):
-            result = round(result, 4)
-        return str(result)
+        node = ast.parse(cleaned, mode="eval")
+    except SyntaxError as e:
+        return f"Error evaluating expression '{expression}': invalid syntax ({e})"
+
+    allowed_ops = {
+        ast.Add: lambda a, b: a + b,
+        ast.Sub: lambda a, b: a - b,
+        ast.Mult: lambda a, b: a * b,
+        ast.Div: lambda a, b: a / b,
+        ast.FloorDiv: lambda a, b: a // b,
+        ast.Mod: lambda a, b: a % b,
+        ast.Pow: lambda a, b: a ** b,
+    }
+
+    allowed_unary = {
+        ast.UAdd: lambda a: +a,
+        ast.USub: lambda a: -a,
+    }
+
+    allowed_funcs = {
+        "sqrt": math.sqrt,
+        "log": math.log,
+        "pow": math.pow,
+        "abs": abs,
+    }
+
+    def _eval(n: ast.AST) -> Any:
+        if isinstance(n, ast.Expression):
+            return _eval(n.body)
+        elif isinstance(n, ast.Constant):
+            if isinstance(n.value, (int, float)):
+                return n.value
+            raise ValueError(f"Unsupported constant type: {type(n.value).__name__}")
+        elif isinstance(n, ast.BinOp):
+            op_type = type(n.op)
+            if op_type not in allowed_ops:
+                raise ValueError(f"Unsupported binary operator: {op_type.__name__}")
+            left = _eval(n.left)
+            right = _eval(n.right)
+            if op_type in (ast.Div, ast.FloorDiv, ast.Mod) and right == 0:
+                raise ZeroDivisionError("division by zero")
+            return allowed_ops[op_type](left, right)
+        elif isinstance(n, ast.UnaryOp):
+            op_type = type(n.op)
+            if op_type not in allowed_unary:
+                raise ValueError(f"Unsupported unary operator: {op_type.__name__}")
+            return allowed_unary[op_type](_eval(n.operand))
+        elif isinstance(n, ast.Call):
+            if isinstance(n.func, ast.Name) and n.func.id in allowed_funcs:
+                args = [_eval(arg) for arg in n.args]
+                return allowed_funcs[n.func.id](*args)
+            raise ValueError("Forbidden function call in arithmetic expression")
+        else:
+            raise ValueError(f"Unsupported expression node: {type(n).__name__}")
+
+    try:
+        val = _eval(node)
+        if isinstance(val, float):
+            val = round(val, 4)
+        return str(val)
+    except ZeroDivisionError:
+        return "Error: Division by zero"
     except Exception as e:
         return f"Error evaluating expression '{expression}': {e}"
 

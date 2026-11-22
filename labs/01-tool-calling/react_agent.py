@@ -76,7 +76,8 @@ class ReActAgent(BaseAgent):
         #    - If result is a dict or list, format with `json.dumps(raw_result, indent=2)`.
         #    - Otherwise convert to `str(raw_result)`.
         # 4. Log the observation: call `self.logger.observation(result_str)`.
-        # 5. Return `result_str`. Catch any Exception and return error string instead of crashing.
+        # 5. Return `result_str`. Catch any Exception and return error string:
+        #    f"Error executing tool: {e}".
         # ==============================================================================
         raise NotImplementedError("TODO [Lab 1.3]: Implement tool execution and observation logging")
 

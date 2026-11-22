@@ -72,7 +72,7 @@ class ReActAgent(BaseAgent):
             self.logger.observation(result_str)
             return result_str
         except Exception as e:
-            err = f"Error executing tool '{tool_call.name}': {type(e).__name__}: {e}"
+            err = f"Error executing tool: {e}"
             self.logger.error(err)
             return err
 

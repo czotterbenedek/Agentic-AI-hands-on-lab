@@ -210,7 +210,7 @@ class AgentEvaluator:
         """
         raise NotImplementedError("TODO [Lab 5.5]: Implement run_all")
 
-    def export_results(self, results: Dict[str, Any], output_prefix: str = "evaluation_results") -> None:
+    def export_results(self, results: Dict[str, Any], output_prefix: str = "evaluation_benchmark") -> None:
         """Export evaluation results to CSV and JSON."""
         json_path = f"{output_prefix}.json"
         csv_path = f"{output_prefix}.csv"
