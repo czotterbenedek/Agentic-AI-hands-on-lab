@@ -2,7 +2,19 @@
 
 Hands-on laboratory curriculum for the MSc course *AI In Practice (2026)* at Budapest University of Technology and Economics (BME).
 
-Throughout five progressive modules, students build a production-grade **University Research Assistant** from first principles—mastering tool execution, open protocols, persistent memory, multi-agent coordination, and automated evaluation.
+**Course objective**: Students build a production-grade **University Research Assistant** across five progressive modules—mastering tool execution, open protocols, persistent memory, multi-agent coordination, and automated evaluation.
+
+| Lab | Topic | What you build |
+|:---|:---|:---|
+| 1 | Tool Calling & ReAct | AST-safe calculator, citation stats, Thought-Action-Observation loop |
+| 2 | Model Context Protocol (MCP) | JSON-RPC 2.0 stdio server exposing 5 bibliographic tools + client |
+| 3 | Agent Memory & Personalization | SQLite episodic history, per-user preference storage, context injection |
+| 4 | Multi-Agent Systems & LangGraph | Supervisor-Specialist StateGraph with 2-cycle loop detection |
+| 5 | Agent Evaluation & MLflow | 20-case benchmark, Precision/Recall/F1 for tool use, MLflow tracking |
+
+**Runtime constraints**: Python 3.11+. All labs and tests run fully offline using the built-in `MockLLMClient` (no API key or GPU required). Optional live providers: OpenAI, Ollama, vLLM via `.env`.
+
+**Definition of done**: Each starter lab in `labs/` has a matching reference solution in `solutions/` and a test module. `python3 tests/test_all_solutions.py` reports 6/6 suites passed. `mkdocs build` completes without errors.
 
 ---
 

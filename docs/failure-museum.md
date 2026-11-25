@@ -1,10 +1,10 @@
 # The Agent Failure Museum
 
-Welcome to the **Agent Failure Museum**—a curated exhibition of real-world failure modes encountered when building, running, and scaling Agentic AI systems.
+Welcome to the **Agent Failure Museum**—a curated set of reproducible failure scenarios drawn from the patterns that commonly arise when building Agentic AI systems.
 
 Unlike traditional deterministic software, AI agents are probabilistic, stateful, and operate in open-ended environments. When they fail, they fail in unique, often subtle ways: cycling endlessly, inventing imaginary capabilities, passing malformed arguments to APIs, leaking private user data across sessions, or getting trapped in multi-agent ping-pong loops.
 
-This document examines **six classic agent failure scenarios**. For each failure, we dissect:
+Each exhibit in this document is a **reproducible scenario with a regression test** in `tests/test_failure_museum.py`. For each failure, we dissect:
 1. **Scenario and Example Input**
 2. **Observable Behavior**
 3. **Root Cause**
