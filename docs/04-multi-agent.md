@@ -51,7 +51,7 @@ The files for Lab 4 are located in `labs/04-multi-agent/`:
 ```text
 labs/04-multi-agent/
 ├── schemas.py          # AgentState TypedDict and SharedContext dataclasses
-├── specialists.py      # ResearcherSpecialist and AnalystSpecialist
+├── specialists.py      # ResearchSpecialist and AnalysisSpecialist
 ├── supervisor.py       # ResearchSupervisor (decomposition, routing, synthesis)
 ├── orchestrator.py     # LangGraph StateGraph builder, cycle detector, and runner
 ├── run_lab.py          # Interactive consortium execution demo
@@ -88,7 +88,7 @@ stateDiagram-v2
 ## 4. Student Tasks (What You Need to Do)
 
 ### Task 4.1: Research Specialist Execution
-**File:** `labs/04-multi-agent/specialists.py` — `ResearcherSpecialist.execute_task()`  
+**File:** `labs/04-multi-agent/specialists.py` — `ResearchSpecialist.execute_task()`  
 **Tag:** `# TODO [Lab 4.1]` (~35 lines)
 
 The Research Specialist searches for papers and retrieves metadata:
@@ -196,12 +196,11 @@ python3 -m pytest labs/04-multi-agent/test_lab.py
 
 Expected output:
 ```text
-test_researcher_specialist_execution PASSED
-test_analyst_specialist_execution PASSED
-test_supervisor_planning_and_delegation PASSED
+test_specialist_research_execution PASSED
+test_specialist_analysis_execution PASSED
+test_supervisor_coordination_and_synthesis PASSED
+test_max_delegation_depth_limit PASSED
+test_cycle_detection PASSED
 test_langgraph_workflow_execution PASSED
-test_cycle_detection_stops_infinite_delegation PASSED
-test_shared_context_state_preservation PASSED
-...
 6 passed in 0.40s
 ```

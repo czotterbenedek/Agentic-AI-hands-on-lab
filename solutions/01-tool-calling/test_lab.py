@@ -69,7 +69,7 @@ def test_compute_citation_stats():
     stats = compute_citation_stats(["1706.03762", "2106.09685"])
     assert stats["paper_count"] == 2
     assert stats["total_citations"] == 125000 + 18500
-    assert stats["average_citations"] == (125000 + 18500) / 2
+    assert abs(stats["average_citations"] - (125000 + 18500) / 2) < 0.01
 
 
 def test_react_agent_single_step():

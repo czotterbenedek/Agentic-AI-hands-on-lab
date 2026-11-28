@@ -211,13 +211,11 @@ python3 -m pytest labs/03-memory/test_lab.py
 
 Expected output:
 ```text
-test_init_db_creates_all_tables PASSED
-test_save_and_get_preferences PASSED
-test_preference_upsert_behavior PASSED
-test_user_isolation_guarantee PASSED
+test_sqlite_table_initialization PASSED
+test_preference_crud PASSED
+test_user_memory_isolation PASSED
+test_conversation_history_persistence PASSED
+test_memory_prompt_injection PASSED
 test_clear_user_data PASSED
-test_memory_injection_formatting PASSED
-test_agent_memory_persistence_and_personalization PASSED
-...
-7 passed in 0.35s
+6 passed in 0.35s
 ```

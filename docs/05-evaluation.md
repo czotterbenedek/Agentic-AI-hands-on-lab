@@ -215,13 +215,12 @@ python3 -m pytest labs/05-evaluation/test_lab.py
 
 Expected output:
 ```text
-test_task_success_deterministic_checks PASSED
-test_tool_selection_accuracy_metrics PASSED
-test_tool_execution_success_calculation PASSED
-test_efficiency_calculation PASSED
-test_evaluator_harness_execution PASSED
+test_task_success_metric PASSED
+test_tool_selection_accuracy PASSED
+test_tool_execution_success PASSED
+test_efficiency_metric PASSED
+test_evaluator_harness PASSED
 test_mlflow_tracking_logging PASSED
-...
 6 passed in 0.45s
 ```
 

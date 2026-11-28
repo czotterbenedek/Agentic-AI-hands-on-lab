@@ -237,12 +237,11 @@ python3 -m pytest labs/02-mcp/test_lab.py
 
 Expected output:
 ```text
-test_server_initialize_and_ping PASSED
-test_server_tools_list PASSED
-test_server_tool_execution PASSED
-test_get_recent_and_author_papers PASSED
-test_client_roundtrip PASSED
-test_mcp_agent_end_to_end PASSED
-...
+test_mcp_server_initialize PASSED
+test_mcp_server_tools_list PASSED
+test_mcp_server_search_tool PASSED
+test_mcp_server_bibtex_tool PASSED
+test_mcp_client_integration PASSED
+test_mcp_agent_run PASSED
 6 passed in 0.30s
 ```

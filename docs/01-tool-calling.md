@@ -76,8 +76,10 @@ labs/01-tool-calling/
 To help you focus on agentic principles rather than boilerplate, the following components are already implemented:
 1. **`generate_json_schema(func)` (`tools.py`)**: Automatically reflects Python type annotations (`str`, `int`, `float`, `bool`, `list`) and docstrings into compliant OpenAPI/JSON Schema parameter objects.
 2. **`search_papers(query, limit)` (`tools.py`)**: Searches academic papers from the curated dataset or Crossref fallback.
-3. **Loop Skeleton & Message Init (`react_agent.py`)**: Message context initialization (`system`, `user`), iteration tracking, thought logging, and loop termination detection (`if not response.tool_calls:`).
-4. **Tool Lookup & JSON Deserialization (`react_agent.py`)**: Resolves tool names in the registry and safely parses stringified JSON argument payloads.
+3. **`summarize_paper(paper_id)` (`tools.py`)**: Returns a formatted one-paragraph summary for a paper by ID.
+4. **`get_default_tool_registry()` (`tools.py`)**: Returns a pre-populated `ToolRegistry` with all four research tools already registered — use this in your agent.
+5. **Loop Skeleton & Message Init (`react_agent.py`)**: Message context initialization (`system`, `user`), iteration tracking, thought logging, and loop termination detection (`if not response.tool_calls:`).
+6. **Tool Lookup & JSON Deserialization (`react_agent.py`)**: Resolves tool names in the registry and safely parses stringified JSON argument payloads.
 
 ---
 
@@ -188,11 +190,13 @@ python3 -m pytest labs/01-tool-calling/test_lab.py
 
 Expected output upon successful completion:
 ```text
-test_safe_calculator PASSED
-test_citation_stats PASSED
-test_execute_tool_call PASSED
-test_react_agent_full_loop PASSED
-test_iteration_limit PASSED
-...
+test_generate_json_schema PASSED
+test_tool_registry PASSED
+test_calculate_tool_safety PASSED
+test_search_papers PASSED
+test_compute_citation_stats PASSED
+test_react_agent_single_step PASSED
+test_react_agent_max_iterations PASSED
+test_react_agent_invalid_tool_recovery PASSED
 8 passed in 0.25s
 ```
