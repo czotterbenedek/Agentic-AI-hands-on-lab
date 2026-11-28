@@ -124,7 +124,7 @@ This runs the 20-case standardized benchmark, logs parameters and metrics to MLf
 
 ## 🤖 AI Tools Used & Lessons Learned
 
-- TODO
+Throughout this Agentic AI laboratory project, I used several AI tools to develop the final version of the lab series. I started with ChatGPT, discussing how to structure the repository to meet the project criteria. After several rounds of refining the task description, I asked it to create an implementation plan with instructions for the coding agent, Antigravity. I then used Antigravity to build the repository step by step, starting with the labs and solutions. Once I was satisfied with their quality, I wrote the lab sheets and, finally, the Failure Museum. I also ran several consistency checks, since I expected that Antigravity might make mistakes during implementation. In the end, I published the lab sheets on GitHub Pages using MkDocs.
 
 ---
 
